@@ -78,60 +78,60 @@ class VecDBhnsw:
         it = -1
 
         for v in db_vectors:
-            print("----inserting vector----- ", v.id)
-            # print("the vector is ", v)
+            # print("----inserting vector----- ", v.id)
+            # # print("the vector is ", v)
             # generate a random number l that is smaller than or equal the number of layers
             level = int(-log2(random()) * level_mult) + 1
-            print("the level is ", level)
+            # print("the level is ", level)
 
             # case 1
             # the level is empty, we will the required number of layers
             layers = max(len(hnsw_structure), level)
 
             if level > len(hnsw_structure):
-                print("appending layers")
+                # print("appending layers")
                 add_layers = 0
                 layer_index = len(hnsw_structure)
                 for i in range(level - len(hnsw_structure)):
                     hnsw_structure.append({})
                     # then insert this vector into the new level
-                    # print("appending the vector", v)
-                    # print("the layer", i)
+                    # # print("appending the vector", v)
+                    # # print("the layer", i)
                     #v.index = len(hnsw_structure[layer_index])
-                    # print("the index during inserting ", v.index)
-                    # print("the hnsw layer during inserting", hnsw_structure[layer_index])
+                    # # print("the index during inserting ", v.index)
+                    # # print("the hnsw layer during inserting", hnsw_structure[layer_index])
                     hnsw_structure[layer_index][v.id] = v
                     #hnsw_structure[layer_index].append(v)
                     layer_index += 1
                     add_layers += 1
                 layers -= add_layers
-                # print("after appending layers", hnsw_structure)
+                # # print("after appending layers", hnsw_structure)
                 if layers < 0:
                     continue
 
-            print("the structure", hnsw_structure)
+            # print("the structure", hnsw_structure)
             if len(hnsw_structure) == 0:
                 continue
             
-            # print("the layers", layers)
-            # print("the the hnsw before inserting the vector ", hnsw_structure)
+            # # print("the layers", layers)
+            # # print("the the hnsw before inserting the vector ", hnsw_structure)
             entry_node: node = hnsw_structure[layers-1].get(list(hnsw_structure[layers-1].keys())[0])
-            if entry_node is None:
-                    print("Error22222222: entry node is None")
+            #if entry_node is None:
+                    # print("Error22222222: entry node is None")
             nearest_neighbor_score = self._cal_score(v.vect, entry_node.vect)
             for layer in range(layers-1, -1, -1):
-                print("Inserting the vector in the layer with number ", layer)
-                if entry_node is None:
-                    print("Error: entry node is None and the layer is ", layer)
+                # print("Inserting the vector in the layer with number ", layer)
+                #if entry_node is None:
+                    # print("Error: entry node is None and the layer is ", layer)
                 # it += 1
                 # # let's make sure that all the neighbors of each node in each layer has index less than or equal to the layer length
                 # for l in hnsw_structure:
                 #     for node in l:
                 #         for neighbor in node.neighbors:
                 #             if neighbor.index > len(l):
-                #                 print("error in it ", it)
-                #                 print("the node index", node.index)
-                #                 print("the layer length", len(l))
+                #                 # print("error in it ", it)
+                #                 # print("the node index", node.index)
+                #                 # print("the layer length", len(l))
                 if layer == 0:
                     M = m0
                 else:
@@ -149,7 +149,7 @@ class VecDBhnsw:
                     iterations = min(ef, len(hnsw_structure[layer]))
                     sorted_distances = []
                     for i in range(iterations):
-                        print("I am here-------------------")
+                        # print("I am here-------------------")
                         distances = dict()
                         for node in entry_node.neighbors:
                             # calculate the distance between v and each node in this layer
@@ -159,16 +159,16 @@ class VecDBhnsw:
                             #distances.append(self._cal_score(v.vect, node.vect))
                         # find the nearest neighbor
                         if len(distances) == 0:
-                            print("the entry node was ", entry_node)
-                            print("the structure was ", hnsw_structure)
+                            # print("the entry node was ", entry_node)
+                            # print("the structure was ", hnsw_structure)
                             # insert the vector in the this layer
                             hnsw_structure[layer][v.id] = v
                             entry_node = hnsw_structure[layer-1].get(entry_node.id)
-                            if entry_node is None:
-                                print("Errorxxxxxxx: entry node is None")
+                            #if entry_node is None:
+                                # print("Errorxxxxxxx: entry node is None")
                             break
 
-                        print("the distances", distances)
+                        # print("the distances", distances)
                         # sort the distances accroding to the value not the key
                         sorted_distances = sorted(distances.items(), key=lambda x: x[1]) # will distances be sorted? actually it will not be sorted
                         min_score = sorted_distances[0][1]
@@ -176,8 +176,8 @@ class VecDBhnsw:
                             nearest_neighbor_score = min_score
                             if layer > 0:
                                 entry_node = hnsw_structure[layer-1].get(sorted_distances[0][0])
-                                if entry_node is None:
-                                    print("Error333333: entry node is None")
+                                #if entry_node is None:
+                                    # print("Error333333: entry node is None")
                             #entry_node = hnsw_structure[layer][sorted_distances[0][0]]
                                 neighbors_to_connect.append(entry_node)
                         else:
@@ -186,19 +186,19 @@ class VecDBhnsw:
                         continue
                     # connect v and its nearest m neighbors
                     k = min(M, len(neighbors_to_connect))
-                    # print("number of k neighbors", k)
-                    # print("the neighbors to connect", neighbors_to_connect[:k])
+                    # # print("number of k neighbors", k)
+                    # # print("the neighbors to connect", neighbors_to_connect[:k])
                     v.neighbors = neighbors_to_connect[:k]
                     #v.index = len(hnsw_structure[layer])
-                    # print("the index during inserting ", v.index)
-                    # print("the hnsw layer during inserting", hnsw_structure[layer])
+                    # # print("the index during inserting ", v.index)
+                    # # print("the hnsw layer during inserting", hnsw_structure[layer])
 
                     #hnsw_structure[layer].append(v)
                     hnsw_structure[layer][v.id] = v
-                    # print("after appending the vector", hnsw_structure)
+                    # # print("after appending the vector", hnsw_structure)
                     # now insert this node in the neighbors of its nearest neighbors
-                    print("sorted distances", sorted_distances[:k])
-                    print("the neighbors to connect", neighbors_to_connect[:k])
+                    # print("sorted distances", sorted_distances[:k])
+                    # print("the neighbors to connect", neighbors_to_connect[:k])
                     for neighbor in sorted_distances[:k]:
                         if neighbor:
                             hnsw_structure[layer].get(neighbor[0]).neighbors.append(v)
@@ -219,25 +219,25 @@ class VecDBhnsw:
                             entry_node = hnsw_structure[layer-1].get(entry_node.id)
                             break
                         sorted_distances = sorted(distances.items(), key=lambda x: x[1]) # will distances be sorted? actually it will not be sorted
-                        print("the sorted distances", sorted_distances)
-                        min_score = sorted_distances[0][1]
                         # print("the sorted distances", sorted_distances)
+                        min_score = sorted_distances[0][1]
+                        # # print("the sorted distances", sorted_distances)
                         if min_score <= nearest_neighbor_score:
                             nearest_neighbor_score = min_score
-                            # print("I am here ", hnsw_structure[layer])
+                            # # print("I am here ", hnsw_structure[layer])
                             if layer > 0:
                                 entry_node = hnsw_structure[layer-1].get(sorted_distances[0][0])
-                                if entry_node is None:
-                                    print("the structure", hnsw_structure[layer-1])
-                                    print("the id", sorted_distances[0][0])
-                                    print("Error444444: entry node is None")
+                                #if entry_node is None:
+                                    # print("the structure", hnsw_structure[layer-1])
+                                    # print("the id", sorted_distances[0][0])
+                                    # print("Error444444: entry node is None")
                             #entry_node = hnsw_structure[layer][sorted_distances[0][0]]
                         else:
                             break
 
 
-        # print("finish building index")
-        # print(hnsw_structure)
+        # # print("finish building index")
+        # # print(hnsw_structure)
 
 
                 
