@@ -13,6 +13,7 @@ class node:
         self.id = id
         self.vect =  vect
         self.neighbors = []
+        
 
 
 class VecDBhnsw:
@@ -36,7 +37,7 @@ class VecDBhnsw:
                 n = node(index, id, embed)
                 db_vectors.append(n)
                 index += 1
-        # build index                
+        # build index
         self._build_index(db_vectors)
 
     def retrive(self, query: Annotated[List[float], 70], top_k = 5):
@@ -77,8 +78,10 @@ class VecDBhnsw:
 
         for v in db_vectors:
             print("inserting vector", v.index)
+            print("the vector is ", v)
             # generate a random number l that is smaller than or equal the number of layers
             level = int(-log2(random()) * level_mult) + 1
+            print("the level", level)
 
             # case 1
             # the level is empty, we will the required number of layers
@@ -86,12 +89,19 @@ class VecDBhnsw:
 
             if level > len(hnsw_structure):
                 add_layers = 0
-                for i in range(level - len(hnsw_structure)):
+                layer_index = len(hnsw_structure)
+                for i in range(level - len(hnsw_structure) + 1):
                     hnsw_structure.append([])
                     # then insert this vector into the new level
-                    hnsw_structure[i].append(v)
+                    print("appending the vector", v)
+                    print("the layer", i)
+                    hnsw_structure[layer_index].append(v)
+                    layer_index += 1
                     add_layers += 1
                 layers -= add_layers
+                print("after appending layers", hnsw_structure)
+                if layers < 0:
+                    continue
 
             if len(hnsw_structure) == 0:
                 continue
@@ -114,13 +124,9 @@ class VecDBhnsw:
                     neighbors_to_connect = []
                     neighbors_to_connect.append(entry_node)
                     
-                    hnsw_structure.append([])
-                    if hnsw_structure[layer] == []:
-                        iterations = 0
-                        hnsw_structure.pop()
 
-                    else:
-                        iterations = min(ef, len(hnsw_structure[layer]))
+                    iterations = min(ef, len(hnsw_structure[layer]))
+
                     for i in range(iterations):
                         distances = []
                         for node in entry_node.neighbors:
@@ -138,9 +144,11 @@ class VecDBhnsw:
                             break
                     # connect v and its nearest m neighbors
                     k = min(M, len(neighbors_to_connect))
+                    v.neighbors = neighbors_to_connect[:k]
                     hnsw_structure[layer].append(v)
-                    hnsw_structure[layer][v.index].append(neighbors_to_connect[:k])
 
+                    #hnsw_structure[layer][v.index].append(neighbors_to_connect[:k])
+                # if not, we will find the nearest neighbor of v in this layer to be the entry node of the next layer
                 else:
                     iterations = min(ef, len(hnsw_structure[layer]))
                     for i in range(iterations):
@@ -150,7 +158,8 @@ class VecDBhnsw:
                             # and find the nearest one
                             distances.append(self._cal_score(v.vect, node.vect))
                         # find the nearest neighbor
-                        min_score = min(distances)
+                        sorted_distances = sorted(distances)
+                        min_score = sorted_distances[0]
                         if min_score <= nearest_neighbor_score:
                             nearest_neighbor_score = min_score
                             entry_node = hnsw_structure[layer][distances.index(min_score)] 
