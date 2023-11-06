@@ -134,6 +134,8 @@ class VecDBhnsw:
                             # and find the nearest one
                             distances.append(self._cal_score(v.vect, node.vect))
                         # find the nearest neighbor
+                        if len(distances) == 0:
+                            break
                         sorted_distances = sorted(distances)
                         min_score = sorted_distances[0]
                         if min_score <= nearest_neighbor_score:
@@ -146,6 +148,8 @@ class VecDBhnsw:
                     k = min(M, len(neighbors_to_connect))
                     v.neighbors = neighbors_to_connect[:k]
                     hnsw_structure[layer].append(v)
+                    for node in neighbors_to_connect[:k]:
+                        node.neighbors.append(v)
 
                     #hnsw_structure[layer][v.index].append(neighbors_to_connect[:k])
                 # if not, we will find the nearest neighbor of v in this layer to be the entry node of the next layer
@@ -158,12 +162,13 @@ class VecDBhnsw:
                             # and find the nearest one
                             distances.append(self._cal_score(v.vect, node.vect))
                         # find the nearest neighbor
+                        if len(distances) == 0:
+                            break
                         sorted_distances = sorted(distances)
                         min_score = sorted_distances[0]
                         if min_score <= nearest_neighbor_score:
                             nearest_neighbor_score = min_score
                             entry_node = hnsw_structure[layer][distances.index(min_score)] 
-                            neighbors_to_connect.append(entry_node)
                         else:
                             break
 
