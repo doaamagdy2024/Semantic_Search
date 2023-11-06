@@ -15,7 +15,7 @@ class node:
         self.neighbors = []
 
 
-class VecDBWorst:
+class VecDBhnsw:
     def __init__(self, file_path = "saved_db.csv", new_db = True) -> None:
         self.file_path = file_path
         if new_db:
@@ -26,15 +26,18 @@ class VecDBWorst:
     
     def insert_records(self, rows: List[Dict[int, Annotated[List[float], 70]]]): # anonoated is a type hint means that the list has 70 elements of type float
         # create a list to store all the vectors
-        query_vectors = []
+        db_vectors = []
         with open(self.file_path, "a+") as fout:
+            index = 0
             for row in rows:
                 id, embed = row["id"], row["embed"]
                 row_str = f"{id}," + ",".join([str(e) for e in embed])
                 fout.write(f"{row_str}\n")
-                query_vectors.append(embed)
+                n = node(index, id, embed)
+                db_vectors.append(n)
+                index += 1
         # build index                
-        self._build_index()
+        self._build_index(db_vectors)
 
     def retrive(self, query: Annotated[List[float], 70], top_k = 5):
         scores = []
@@ -56,7 +59,7 @@ class VecDBWorst:
         cosine_similarity = dot_product / (norm_vec1 * norm_vec2)
         return cosine_similarity
 
-    def _build_index(self, query_vector: list[node]):
+    def _build_index(self, db_vectors):
         # we will use hnsw to build index
         # first we need to load all the vectors from the file
         # and during the loading process, we will build the index
@@ -72,7 +75,8 @@ class VecDBWorst:
         m0 = 2*m
         level_mult = 1 / log2(m)
 
-        for v in query_vector:
+        for v in db_vectors:
+            print("inserting vector", v.index)
             # generate a random number l that is smaller than or equal the number of layers
             level = int(-log2(random()) * level_mult) + 1
 
@@ -85,16 +89,18 @@ class VecDBWorst:
                 for i in range(level - len(hnsw_structure)):
                     hnsw_structure.append([])
                     # then insert this vector into the new level
-                    hnsw_structure[layer].append(v)
+                    hnsw_structure[i].append(v)
                     add_layers += 1
                 layers -= add_layers
 
             if len(hnsw_structure) == 0:
                 continue
-
-            entry_node: node = hnsw_structure[layers][0]
+            
+            print("the layers", layers)
+            print(hnsw_structure)
+            entry_node: node = hnsw_structure[layers-1][0]
             nearest_neighbor_score = self._cal_score(v.vect, entry_node.vect)
-            for layer in range(layers, 0):
+            for layer in range(layers-2, 0):
                 if layer == 0:
                     M = m0
                 else:
@@ -107,7 +113,14 @@ class VecDBWorst:
                 if layer <= level:
                     neighbors_to_connect = []
                     neighbors_to_connect.append(entry_node)
-                    iterations = max(ef, len(hnsw_structure[layer]))
+                    
+                    hnsw_structure.append([])
+                    if hnsw_structure[layer] == []:
+                        iterations = 0
+                        hnsw_structure.pop()
+
+                    else:
+                        iterations = min(ef, len(hnsw_structure[layer]))
                     for i in range(iterations):
                         distances = []
                         for node in entry_node.neighbors:
@@ -115,7 +128,8 @@ class VecDBWorst:
                             # and find the nearest one
                             distances.append(self._cal_score(v.vect, node.vect))
                         # find the nearest neighbor
-                        min_score = min(distances)
+                        sorted_distances = sorted(distances)
+                        min_score = sorted_distances[0]
                         if min_score <= nearest_neighbor_score:
                             nearest_neighbor_score = min_score
                             entry_node = hnsw_structure[layer][distances.index(min_score)] 
@@ -128,7 +142,7 @@ class VecDBWorst:
                     hnsw_structure[layer][v.index].append(neighbors_to_connect[:k])
 
                 else:
-                    iterations = max(ef, len(hnsw_structure[layer]))
+                    iterations = min(ef, len(hnsw_structure[layer]))
                     for i in range(iterations):
                         distances = []
                         for node in entry_node.neighbors:
@@ -143,6 +157,10 @@ class VecDBWorst:
                             neighbors_to_connect.append(entry_node)
                         else:
                             break
+
+
+        print("finish building index")
+        print(hnsw_structure)
 
 
                 
