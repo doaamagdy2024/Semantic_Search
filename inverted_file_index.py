@@ -3,6 +3,7 @@ import numpy as np
 from math import log2
 from random import random
 from math import ceil
+from sklearn.cluster import KMeans
 
 # in this file we will implement a better version of VecDB
 # we have to use better indexing method to speed up the retrival process
@@ -19,8 +20,9 @@ class VecDBIF:
     def __init__(self, file_path = "saved_db.csv", new_db = True) -> None:
         
         # hyperparameters
-        self.num_vectors_per_cluster = 10000
+        self.num_vectors_per_cluster = 50
         self.centroids = []
+        self.kmeans = None
         # we will store the clusters in files
         # each file will have a centroid id
         # and the vectors that belong to that centroid
@@ -61,6 +63,39 @@ class VecDBIF:
         return cosine_similarity
 
     def _build_index(self, db_vectors):
+        num_centroids = ceil(len(db_vectors) / self.num_vectors_per_cluster)
+        print("num_centroids", num_centroids)
+        
+        # first we will use kmeans to find the centroids
+        self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors])
+        # now Kmeans has the centroids
+        # now we need to assign each vector to the closest centroid
+        self.centroids = self.kmeans.cluster_centers_
+        clusters = {}
+        # we can find the closest centroid by fit function
+        for vec in db_vectors:
+            centroid = self.kmeans.predict([vec.vect])[0]
+            clusters[centroid] = clusters.get(centroid, []) + [vec]
+
+        # now store each cluster in a file
+        # create a file for each centroid
+        print("Start storing index")
+        for centroid in clusters:
+            with open(f"cluster_{centroid}.csv", "w") as fout:
+                for vec in clusters[centroid]:
+                    row_str = f"{vec.id}," + ",".join([str(e) for e in vec.vect])
+                    fout.write(f"{row_str}\n")
+
+        print("Done building index")
+
+
+
+
+
+
+# old
+
+    def _build_index_old(self, db_vectors):
         # fist pick random centroids
         num_centroids = ceil(len(db_vectors) / self.num_vectors_per_cluster)
         print("num_centroids", num_centroids)
@@ -110,4 +145,6 @@ class VecDBIF:
                     fout.write(f"{row_str}\n")
 
         print("Done building index")
+
+
 

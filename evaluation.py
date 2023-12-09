@@ -59,7 +59,7 @@ def eval(results: List[Result]):
 if __name__ == "__main__":
     #db = VecDBhnsw()
     db = VecDBIF()
-    records_np = np.random.random((5*(10**6), 70))
+    records_np = np.random.random((1000, 70))
     records_dict = [{"id": i, "embed": list(row)} for i, row in enumerate(records_np)] # id is the index of the row so it is unique
     _len = len(records_np)
     db.insert_records(records_dict)
