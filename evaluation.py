@@ -4,6 +4,7 @@ from hnsw import VecDBhnsw
 import time
 from dataclasses import dataclass
 from typing import List
+from inverted_file_index import VecDBIF
 
 AVG_OVERX_ROWS = 10
 
@@ -56,9 +57,10 @@ def eval(results: List[Result]):
 
 
 if __name__ == "__main__":
-    db = VecDBhnsw()
-    records_np = np.random.random((1000, 70))
-    records_dict = [{"id": i, "embed": list(row)} for i, row in enumerate(records_np)]
+    #db = VecDBhnsw()
+    db = VecDBIF()
+    records_np = np.random.random((5*(10**6), 70))
+    records_dict = [{"id": i, "embed": list(row)} for i, row in enumerate(records_np)] # id is the index of the row so it is unique
     _len = len(records_np)
     db.insert_records(records_dict)
     res = run_queries(db, records_np, 5, 1)
