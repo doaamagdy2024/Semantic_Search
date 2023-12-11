@@ -59,12 +59,25 @@ def eval(results: List[Result]):
 if __name__ == "__main__":
     #db = VecDBhnsw()
     db = VecDBIF()
-    records_np = np.random.random((1000, 70))
+    records_np = np.random.random((2000, 70)) # 5 million records
     records_dict = [{"id": i, "embed": list(row)} for i, row in enumerate(records_np)] # id is the index of the row so it is unique
     _len = len(records_np)
     db.insert_records(records_dict)
     res = run_queries(db, records_np, 5, 1)
     print(eval(res))
+
+
+    # if we want to calculate the recall
+    # we need to get the actual ids
+    # db_worest = VecDBWorst()
+    # db_worest.insert_records(records_dict)
+    # res_best = run_queries(db_worest, records_np, 5, 1)
+    # print(eval(res_best))
+
+    # recall is the true positive / (true positive + false negative)
+    # recall = len(set(res[0].db_ids).intersection(set(res_best[0].db_ids))) / len(set(res_best[0].db_ids))
+    # print("recall = ", recall)
+
     
     # records_np = np.concatenate([records_np, np.random.random((90000, 70))])
     # records_dict = [{"id": i + _len, "embed": list(row)} for i, row in enumerate(records_np[_len:])]

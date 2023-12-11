@@ -104,20 +104,11 @@ class VecDBIF:
 
 
     def _build_index(self, db_vectors):
-        # now let's create the centroids on part of the vectors only to speed up the process
-
-        # number of vectors to use to create the centroids
-        n_vectors_train = ceil(len(db_vectors) * 0.01)
-        
-        num_centroids = ceil(n_vectors_train / self.num_vectors_per_cluster)
-
-        print("n_vectors_train", n_vectors_train)
+        num_centroids = ceil(len(db_vectors) / self.num_vectors_per_cluster)
         print("num_centroids", num_centroids)
-
-        self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors[:n_vectors_train]]) 
         
-        #self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors])
-        
+        # first we will use kmeans to find the centroids
+        self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors])
         # now Kmeans has the centroids
         # now we need to assign each vector to the closest centroid
         self.centroids = self.kmeans.cluster_centers_
