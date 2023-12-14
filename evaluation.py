@@ -61,6 +61,7 @@ if __name__ == "__main__":
     new_db = True
     # create the db
     db = VecDB(new_db=new_db, files_path="10k")
+    worst_db = VecDBWorst(new_db=new_db)
     # generate random records with ceil(num_records / 1M) vectors each time
     num_of_iterations = ceil(num_records / 1000000)
     if num_of_iterations == 0:
@@ -72,10 +73,14 @@ if __name__ == "__main__":
     
     records_np = rnd.random((num_records, 70))
     for i in range(num_of_iterations):
-        num_records_to_insert = num_records - (i * 1000000) 
-        records_to_insert = records_np[i * 1000000: i * 1000000 + num_records_to_insert - 1]        
+        num_records_to_insert = num_records - (i * 1000000)
+        records_to_insert = records_np[i * 1000000: i * 1000000 + num_records_to_insert - 1]
         records_dict = [{"id": i + (i * 1000000), "embed": list(row)} for i, row in enumerate(records_np)]
         db.insert_records(records_dict, first_insert = i == 0)
+        
+    # insert the records in the worst db
+    records_dict = [{"id": i, "embed": list(row)} for i, row in enumerate(records_np)]
+    worst_db.insert_records(records_dict)
 
     # for i in range(num_of_iterations):
     #     num_records_to_insert = num_records - (i * 1000000)
@@ -83,6 +88,14 @@ if __name__ == "__main__":
     #     records_dict = [{"id": i + (i * 1000000), "embed": list(row)} for i, row in enumerate(records_np)]
     #     db.insert_records(records_dict, first_insert = i == 0)
     res = run_queries(db, records_np, 5, 1)
+    res_worst = run_queries(worst_db, records_np, 5, 1)
+    eval_res = eval(res)
+    eval_res_worst = eval(res_worst)
+    
+    # calculate the recall
+    recall = len(set(res[0].db_ids).intersection(set(res_worst[0].db_ids))) / len(set(res_worst[0].db_ids))
+    
+    print("recall = ", recall)
     print(eval(res))
 
 
