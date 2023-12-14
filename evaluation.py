@@ -73,7 +73,7 @@ if __name__ == "__main__":
     records_np = rnd.random((num_records, 70))
     for i in range(num_of_iterations):
         num_records_to_insert = num_records - (i * 1000000) 
-        records_to_insert = records_np[i * 1000000: (i + 1) * 1000000]
+        records_to_insert = records_np[i * 1000000: i * 1000000 + num_records_to_insert - 1]        
         records_dict = [{"id": i + (i * 1000000), "embed": list(row)} for i, row in enumerate(records_np)]
         db.insert_records(records_dict, first_insert = i == 0)
 

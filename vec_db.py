@@ -58,23 +58,29 @@ class VecDB:
 
         # first open the file
         f = open("centroids.pkl", "rb")
-        self.centroids = pickle.load(f)
+
+        # loop over all the lines in the file to read vector by vector
+        self.centroids = []
+        while True:
+            try:
+                v = pickle.load(f)
+                self.centroids.append(v)
+            except:
+                break
         f.close()
-        
-        #print("self.centroids[1:]", self.centroids[1:])
-        
-        
-        # print("self.centroids", self.centroids)
-        # now let's get the centroids with no id
+
         # remove the IDs from the centroids
-        centroids_with_no_id = self.centroids[1:] # [centroid[1:] for centroid in self.centroids]
+        centroids_with_no_id = [centroid[1:] for centroid in self.centroids]
+
         # print("centroids_with_no_id", centroids_with_no_id)
     
-        # let it one dimension
-        query = query[0]
-        # print("centroids are", centroids_with_no_id)
+        #print("centroids with no id are", centroids_with_no_id)
         # print("query is", query)
-        nearest_centroid, _ = VQ.vq([query], [centroids_with_no_id])
+        nearest_centroid, _ = VQ.vq(query, centroids_with_no_id)
+        print("Before: nearest_centroid", nearest_centroid)
+
+        #nearest_centroid = self.centroids[nearest_centroid[0]][0]
+        print("After: nearest_centroid", nearest_centroid)
 
         
         # print("BEFORE: nearest_centroids", nearest_centroid)
@@ -134,7 +140,7 @@ class VecDB:
     def _build_index_on_whole_db(self, db_vectors):
         # now let's create the centroids on part of the vectors only to speed up the process
         # number of vectors to use to create the centroids
-        n_vectors_train = ceil(len(db_vectors) * 0.01)
+        n_vectors_train = ceil(len(db_vectors) * 0.5)
         
         num_centroids = ceil(n_vectors_train / self.num_vectors_per_cluster)
 
