@@ -55,25 +55,31 @@ class VecDB:
 
     # TODO: change this function to retreive from the indexed Inverted file index db
     def retrive(self, query: Annotated[List[float], 70], top_k = 5):
-        
-        self.centroids = np.load(f"{self.files_path}/centroids.pkl")
-        # # now we need to find the n closest centroids to the query
-        # # we will use the kmeans model to find the closest centroids
-        # # but first we need to read the kmeans model from the file
-        # kmeans = KMeans(n_clusters=len(np.load(f"{self.files_path}/kmeans.npy")), random_state=0)
-        # kmeans.cluster_centers_ = np.load(f"{self.files_path}/kmeans.npy")
-        
-        n = 3 # number of nearest centroids to get
-        # remove the IDs from the centroids
-        centroids_with_no_id = [centroid[1:] for centroid in self.centroids]
-        nearest_centroids = VQ.vq([query], centroids_with_no_id)
-        print("BEFORE: nearest_centroids", nearest_centroids)
-        nearest_centroid = nearest_centroids[0][0]
-        print("AFTER: nearest_centroids", nearest_centroids)
-        # nearest_centroids = sorted(kmeans.cluster_centers_, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
-        # # now we need to get the label of each centroid
-        # nearest_centroids = [kmeans.predict([centroid])[0] for centroid in nearest_centroids]
 
+        # first open the file
+        f = open("centroids.pkl", "rb")
+        self.centroids = pickle.load(f)
+        f.close()
+        
+        #print("self.centroids[1:]", self.centroids[1:])
+        
+        
+        # print("self.centroids", self.centroids)
+        # now let's get the centroids with no id
+        # remove the IDs from the centroids
+        centroids_with_no_id = self.centroids[1:] # [centroid[1:] for centroid in self.centroids]
+        # print("centroids_with_no_id", centroids_with_no_id)
+    
+        # let it one dimension
+        query = query[0]
+        # print("centroids are", centroids_with_no_id)
+        # print("query is", query)
+        nearest_centroid, _ = VQ.vq([query], [centroids_with_no_id])
+
+        
+        # print("BEFORE: nearest_centroids", nearest_centroid)
+
+      
         # now we need to search in the files of the nearest centroids
         # we will get the top k vectors from each file
         # then we will sort them by their score
@@ -83,22 +89,20 @@ class VecDB:
         heapq.heapify(heap)
         for centroid in nearest_centroid:
             # open the file of the centroid
-            f = open(f"cluster_{centroid}.pkl", "r")
-            # read the file line by line
+            f = open(f"cluster_{centroid}.pkl", "rb")
+
+            # load vector by vector from the file
             while True:
-                line = f.readline()
-                if not line:
+                try:
+                    v = pickle.load(f)
+                    id = v[0]
+                    vect = v[1:]
+                    score = self._cal_score(query, vect)
+                    heapq.heappush(heap, (-score, id, vect))
+                except:
                     break
-                # split the line to get the id and the vector
-                # the first number will be the id
-                # the rest of the numbers will be the vector
-                id = int(line.split(",")[0])
-                vect = [float(e) for e in line.split(",")[1:]]
-                # calculate the score of the vector
-                score = self._cal_score(query, vect)
-                # add it to the heap
-                heapq.heappush(heap, (-score, id, vect))
             f.close()
+
         # now we have the top k vectors in the heap
         # we will pop them from the heap and return them
         ids_scores = []
@@ -152,19 +156,23 @@ class VecDB:
         # now store each cluster in a file
         # create a file for each centroid if not exist
         print("Start storing index")
+        i = 0
         for centroid in clusters:
             # we will create new file in the folder self.files_path
-            with open(f"{self.files_path}/cluster_{centroid}.pkl", "w") as fout:
+            with open(f"cluster_{centroid}.pkl", "wb") as fout:
                 for vec in clusters[centroid]:
-                    row_str = f"{vec.id}," + ",".join([str(e) for e in vec.vect])
-                    fout.write(f"{row_str}\n")
+                    i += 1
+                    v = [vec.id] + vec.vect
+                    pickle.dump(v, fout)
+        
         # we need to store the centroids in a file
-        with open(f"{self.files_path}/centroids.pkl", "w") as fout:
+        with open(f"centroids.pkl", "wb") as fout:
             # write the centroid id, and its vector
             for centroid in self.centroids:
                 label = kmeans.predict([centroid])[0]
-                row_str = f"{label}," + ",".join([str(e) for e in centroid])
-                fout.write(f"{row_str}\n")
+                v = [label] + list(centroid)
+                # fout.write(f"{row_str}\n")
+                pickle.dump(v, fout)
         
         # # we need to store the kmeans model to use it later
         # # we will store it in a file
