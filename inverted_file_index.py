@@ -5,10 +5,11 @@ from random import random
 from math import ceil
 from sklearn.cluster import KMeans
 import heapq
+import os
 
 # in this file we will implement a better version of VecDB
 # we have to use better indexing method to speed up the retrival process
-# we will use FAISS to build index
+# we will use inverted file index
 
 class vector:
     def __init__(self, id, vect) -> None:
@@ -19,7 +20,8 @@ class vector:
 
 class VecDBIF:
     def __init__(self, file_path = "saved_db.csv", new_db = True) -> None:
-        
+        # if new db
+        self.new_db = new_db
         # hyperparameters
         self.num_vectors_per_cluster = 50
         self.centroids = []
@@ -40,21 +42,27 @@ class VecDBIF:
         # create a list to store all the vectors
         db_vectors = []
         with open(self.file_path, "a+") as fout:
+            # the previous line will open the file in append mode
             for row in rows:
                 id, embed = row["id"], row["embed"]
                 row_str = f"{id}," + ",".join([str(e) for e in embed])
                 fout.write(f"{row_str}\n")
                 v = vector(id, embed)
                 db_vectors.append(v)
+                
         # build index
-        self._build_index(db_vectors)
+        self._build_index(db_vectors, build_on_part = self.new_db)
 
     # TODO: change this function to retreive from the indexed Inverted file index db
     def retrive(self, query: Annotated[List[float], 70], top_k = 5):
         # now we need to find the n closest centroids to the query
         # we will use the kmeans model to find the closest centroids
+        # but first we need to read the kmeans model from the file
+        self.kmeans = KMeans(n_clusters=len(np.load("kmeans.npy")), random_state=0)
+        self.kmeans.cluster_centers_ = np.load("kmeans.npy")
+        
         # gen n centroids where n is a hyperparameter
-        n = 2 # number of nearest centroids to get
+        n = 3 # number of nearest centroids to get
         nearest_centroids = sorted(self.kmeans.cluster_centers_, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
         # now we need to get the label of each centroid
         nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
@@ -102,10 +110,19 @@ class VecDBIF:
         cosine_similarity = dot_product / (norm_vec1 * norm_vec2)
         return cosine_similarity
 
+    # add a parameter to build the index on the whole db or on part of it
+    def _build_index(self, db_vectors, build_on_part = False):
+        # first check the build_on_part parameter
+        if not build_on_part:
+            # build the index on the whole db
+            self._build_index_on_whole_db(db_vectors)
+        else:
+            # build the index on part of the db
+            self._build_index_on_part_of_db(db_vectors)
 
-    def _build_index(self, db_vectors):
+
+    def _build_index_on_whole_db(self, db_vectors):
         # now let's create the centroids on part of the vectors only to speed up the process
-
         # number of vectors to use to create the centroids
         n_vectors_train = ceil(len(db_vectors) * 0.01)
         
@@ -116,7 +133,6 @@ class VecDBIF:
 
         self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors[:n_vectors_train]]) 
         
-        #self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors])
         
         # now Kmeans has the centroids
         # now we need to assign each vector to the closest centroid
@@ -128,19 +144,42 @@ class VecDBIF:
             clusters[centroid] = clusters.get(centroid, []) + [vec]
 
         # now store each cluster in a file
-        # create a file for each centroid
+        # create a file for each centroid if not exist
         print("Start storing index")
         for centroid in clusters:
+            # we will create new file
             with open(f"cluster_{centroid}.csv", "w") as fout:
                 for vec in clusters[centroid]:
                     row_str = f"{vec.id}," + ",".join([str(e) for e in vec.vect])
                     fout.write(f"{row_str}\n")
-
+        # we need to store the kmeans model to use it later
+        # we will store it in a file
+        np.save("kmeans.npy", self.kmeans.cluster_centers_)
+        
         print("Done building index")
 
 
+    def _build_index_on_part_of_db(self, db_vectors):
+        # read the kmeans model from the file
+        self.kmeans = KMeans(n_clusters=len(np.load("kmeans.npy")), random_state=0)
+        self.kmeans.cluster_centers_ = np.load("kmeans.npy")
+        
+        clusters = {}
+        # we can find the closest centroid by fit function
+        for vec in db_vectors:
+            centroid = self.kmeans.predict([vec.vect])[0]
+            clusters[centroid] = clusters.get(centroid, []) + [vec]
 
-
+        # now store each cluster in a file
+        # create a file for each centroid if not exist
+        print("Start storing index")
+        for centroid in clusters:
+            # we will append to the file
+            with open(f"cluster_{centroid}.csv", "a") as fout:
+                for vec in clusters[centroid]:
+                    row_str = f"{vec.id}," + ",".join([str(e) for e in vec.vect])
+                    fout.write(f"{row_str}\n")
+        print("Done building index")
 
 
 # old

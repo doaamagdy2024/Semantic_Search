@@ -109,6 +109,7 @@ class VecDBIF:
         
         # first we will use kmeans to find the centroids
         self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors])
+        print("kmeans done")
         # now Kmeans has the centroids
         # now we need to assign each vector to the closest centroid
         self.centroids = self.kmeans.cluster_centers_
