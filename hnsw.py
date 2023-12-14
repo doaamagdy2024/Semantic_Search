@@ -114,28 +114,12 @@ class VecDBhnsw:
 
     def retrive(self, query: Annotated[List[float], 70], top_k = 5):
         # ef_search will be the number of neighbors to be explored during search
-
-        # we will start from the first layer and search for the nearest neighbor to the query vector
-        scores = []
-        
+        # now we want to retrive the nearest 2 neighbors for the input query
+        # first we will search in the first layer to find the nearest neighbor
         entry_node: node = self.hnsw_structure[0].get(list(self.hnsw_structure[0].keys())[0])
         min_score = self._cal_score(query, entry_node.vect)
-        # scores.append((min_score, entry_node.id))
-        for layer in range(len(self.hnsw_structure)):
-        # for layer in self.hnsw_structure:
-            # now search in all the neighbors of the entry node and find the min
-            for neighbor in entry_node.neighbors:
-                score = self._cal_score(query, neighbor.vect)
-                if score < min_score:
-                    min_score  = score
-                    entry_node = neighbor
 
-            
-            if layer == len(self.hnsw_structure) - 1:
-                break
-
-            entry_node = self.hnsw_structure[layer+1].get(entry_node.id)
-
+        
     
 
     def retrive2(self, query: Annotated[List[float], 70], top_k = 5):

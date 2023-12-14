@@ -4,7 +4,7 @@ from hnsw import VecDBhnsw
 import time
 from dataclasses import dataclass
 from typing import List
-from inverted_file_index import VecDBIF
+from vec_db import VecDB
 from math import ceil
 AVG_OVERX_ROWS = 10
 
@@ -57,20 +57,31 @@ def eval(results: List[Result]):
 
 
 if __name__ == "__main__":
-    num_records = 10000000
+    num_records = 10000
     new_db = True
     # create the db
-    db = VecDBIF(new_db=new_db)
+    db = VecDB(new_db=new_db, files_path="10k")
     # generate random records with ceil(num_records / 1M) vectors each time
     num_of_iterations = ceil(num_records / 1000000)
+    if num_of_iterations == 0:
+        num_of_iterations = 1
     # insert the records in the db but take care as the number of records may be less than 1M
     # check the number of records if less than 1M then insert the number of records only
-    # we won't use a fixed seed to generate random records each time
+    # we will use a fixed seed to generate random records
+    rnd = np.random.RandomState(50)
+    
+    records_np = rnd.random((num_records, 70))
     for i in range(num_of_iterations):
-        num_records_to_insert = 1000000 if i != num_of_iterations - 1 else num_records % 1000000
-        records_np = np.random.random((num_records_to_insert, 70))
+        num_records_to_insert = num_records - (i * 1000000)
+        records_to_insert = records_np[i * 1000000: (i + 1) * 1000000]
         records_dict = [{"id": i + (i * 1000000), "embed": list(row)} for i, row in enumerate(records_np)]
-        db.insert_records(records_dict)
+        db.insert_records(records_dict, first_insert = i == 0)
+
+    # for i in range(num_of_iterations):
+    #     num_records_to_insert = num_records - (i * 1000000)
+    #     records_np = rnd.random((num_records_to_insert, 70))
+    #     records_dict = [{"id": i + (i * 1000000), "embed": list(row)} for i, row in enumerate(records_np)]
+    #     db.insert_records(records_dict, first_insert = i == 0)
     res = run_queries(db, records_np, 5, 1)
     print(eval(res))
 
