@@ -1,0 +1,9 @@
+- batches  --> new_db = false
+- if the cluster is very big, then apply the kmeans algorithm on the cluster 
+- run on colab and build all the dbs
+- document
+
+- we need to limit the number of retreived records for each cluster to avoid exceeding the meory size
+- for ex: load all the records of the first cluster then sort them and retreive the top_k from it
+- then load the second cluster and sort it then get hte top_k from it
+- at the end merge all the top_k records and sort them and get the top_k from them

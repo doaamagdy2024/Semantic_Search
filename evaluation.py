@@ -9,6 +9,9 @@ from inverted_file_index import VecDBIF
 from math import ceil
 AVG_OVERX_ROWS = 10
 
+QUERY_SEED_NUMBER = 10
+DB_SEED_NUMBER = 20
+
 @dataclass
 class Result:
     run_time: float
@@ -19,7 +22,8 @@ class Result:
 def run_queries(db, np_rows, top_k, num_runs):
     results = []
     for _ in range(num_runs):
-        query = np.random.random((1,70))
+        rng = np.random.default_rng(QUERY_SEED_NUMBER)
+        query = rng.random((1, 70), dtype=np.float32)
         
         tic = time.time()
         db_ids = db.retrive(query, top_k)
@@ -58,7 +62,7 @@ def eval(results: List[Result]):
 
 
 if __name__ == "__main__":
-    num_records = 1000000
+    num_records = 100000
     new_db = True
     # create the db
     db = VecDB(new_db=new_db, file_path="1M")
@@ -71,9 +75,12 @@ if __name__ == "__main__":
     # insert the records in the db but take care as the number of records may be less than 1M
     # check the number of records if less than 1M then insert the number of records only
     # we will use a fixed seed to generate random records
-    rnd = np.random.RandomState(50)
+    #rnd = np.random.RandomState(50)
+#    np.random.seed(50)    
+    rng = np.random.default_rng(DB_SEED_NUMBER)
+    records_np = rng.random((num_records, 70), dtype=np.float32)
     
-    records_np = rnd.random((num_records, 70))
+    #records_np = rnd.random((num_records, 70), dtype=np.float32)
     # for i in range(num_of_iterations):
     #     num_records_to_insert = num_records - (i * 1000000)
     #     records_to_insert = records_np[i * 1000000: i * 1000000 + num_records_to_insert - 1]
@@ -98,10 +105,10 @@ if __name__ == "__main__":
     eval_res_ivf = eval(res_ivf)
     
     # calculate the recall
-    # recall = len(set(res[0].db_ids).intersection(set(res_worst[0].db_ids))) / len(set(res_worst[0].db_ids))
+    recall = len(set(res_ivf[0].db_ids).intersection(set(res_worst[0].db_ids))) / len(set(res_worst[0].db_ids))
     
-    # print("recall = ", recall)
-    # print("db = ", eval_res)
+    print("recall = ", recall)
+    print("db = ", eval_res_ivf)
     print("worst = ", eval_res_worst)
     print("ivf = ", eval_res_ivf)
 
