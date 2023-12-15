@@ -7,6 +7,9 @@ from sklearn.cluster import KMeans
 import heapq
 import pickle
 import os
+import sys
+import collections
+
 # in this file we will implement a better version of VecDB
 # we have to use better indexing method to speed up the retrival process
 # we will use FAISS to build index
@@ -62,6 +65,10 @@ class VecDB:
             if os.path.exists(self.file_path):
                 for file in os.listdir(self.file_path):
                     os.remove(f"{self.file_path}/{file}")
+        else:
+            # load the kmeans model from the pickle file
+            with open(f"{self.file_path}/old_kmeans.pickle", "rb") as fin:
+                self.kmeans = pickle.load(fin)
     
     def insert_records(self, rows: List[Dict[int, Annotated[List[float], 70]]], src, dest, new_db = True): # anonoated is a type hint means that the list has 70 elements of type float
         # create a list to store all the vectors
@@ -74,6 +81,7 @@ class VecDB:
                 v = vector(id, embed)
                 db_vectors.append(v)
         # build index
+        self.dest = dest
         self._build_index(db_vectors, src, dest, new_db)
 
     # TODO: change this function to retreive from the indexed Inverted file index db
@@ -84,7 +92,7 @@ class VecDB:
             n = 10
         elif self.file_path == "100K":
             n = 20
-        elif self.dest == "1M":
+        elif self.file_path == "1M":
             n = 30
         else:
             n = 40
@@ -93,9 +101,9 @@ class VecDB:
         # gen n centroids where n is a hyperparameter
         #n = 5 # number of nearest centroids to get
         ###########################################################################
-        # load the kmeans model from the pickle file
-        with open(f"{self.file_path}/old_kmeans.pickle", "rb") as fin:
-            self.kmeans = pickle.load(fin)
+        # # load the kmeans model from the pickle file
+        # with open(f"{self.file_path}/old_kmeans.pickle", "rb") as fin:
+        #     self.kmeans = pickle.load(fin)
         ###########################################################################
         
         nearest_centroids = sorted(self.kmeans.cluster_centers_, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
@@ -152,9 +160,11 @@ class VecDB:
         elif self.dest == "100K":
             n = 20
         elif self.dest == "1M":
-            n = 30
+            n = 100
         else:
-            n = 40
+            n = 150
+        # print("self.dest", self.dest)
+        # print("n", n)
         # as numy float is c double we need to convert it to python float
         query = list(query)
         #print("query", query)
@@ -212,6 +222,144 @@ class VecDB:
         #         break       
 
         return ids_scores
+    
+
+
+    def _retrive_directly_2(self, query: Annotated[List[float], 70], top_k = 5):
+        if self.dest == "":
+            n = 5
+        elif self.dest == "10K":
+            n = 7
+        elif self.dest == "100K":
+            n = 60
+        elif self.dest == "1M":
+            n =100
+        else:
+            n = 300
+
+        query = list(query)
+
+        nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
+        # now we need to get the label of each centroid
+        nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
+
+        m = 1000
+        # for each centroid we will get the min(m, vectors in the file) vectors
+        # then we will sort them by their score
+        # then concatenate all the vectors of differnet clusters in one list then sort them by their score
+        # then we will return the top k vectors
+        heap_all = []
+        heapq.heapify(heap_all)
+        for centroid in nearest_centroids:
+            # open the file of the centroid
+            f = open(f"{self.file_path}/cluster_{centroid}.csv", "r")
+            # read the file line by line
+            heap = []
+            heapq.heapify(heap)
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+                # split the line to get the id and the vector
+                # the first number will be the id
+                # the rest of the numbers will be the vector
+                id = int(line.split(",")[0])
+                vect = [float(e) for e in line.split(",")[1:]]
+                # calculate the score of the vector
+                score = self._cal_score(query, vect)
+                # add it to the heap
+                heapq.heappush(heap, (-score, id, vect))
+            f.close()
+            vect_num = min(m, len(heap))
+            heap_all += heap[:vect_num]
+
+        # now we have the top k vectors in the heap
+        # we will pop them from the heap and return them
+        ids_scores = []
+        for _ in range(top_k):
+            score, id, vect = heapq.heappop(heap)
+            ids_scores.append(id)
+            
+        return ids_scores
+
+
+    def _retrive_directly_3(self, query: Annotated[List[float], 70], top_k = 5):
+        if self.dest == "":
+            n = 5
+        elif self.dest == "10K":
+            n = 7
+        elif self.dest == "100K":
+            n = 60
+        elif self.dest == "1M":
+            n = 100
+        else:
+            n = 300
+
+        # For 100 K --> 10 MB
+        # For 1 M --> 25 MB
+        # For 5 M --> 75 MB
+        # For 10 M --> 150 MB
+        # For 15 M --> 225 MB
+        # For 20 M --> 300 MB
+
+        if self.dest == "10K":
+            ram_size_limit = 5 * 1024 * 1024 # 5 MB
+        elif self.dest == "100K":
+            ram_size_limit = 10 * 1024 * 1024
+        elif self.dest == "1M":
+            ram_size_limit = 25 * 1024 * 1024 # 25 MB
+        elif self.dest == "5M":
+            ram_size_limit = 75 * 1024 * 1024 # 75 MB
+        elif self.dest == "10M":
+            ram_size_limit = 150 * 1024 * 1024 # 150 MB
+        elif self.dest == "15M":
+            ram_size_limit = 225 * 1024 * 1024 # 225 MB
+        elif self.dest == "20M":
+            ram_size_limit = 300 * 1024 * 1024 # 300 MB
+        else:
+            ram_size_limit = 5 * 1024 * 1024
+
+
+        query = list(query)
+
+        nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
+        # now we need to get the label of each centroid
+        nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
+
+     
+        q = collections.deque()
+        for centroid in nearest_centroids:
+            # open the file of the centroid
+            f = open(f"{self.file_path}/cluster_{centroid}.csv", "r")
+            # read the file line by line
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+                # split the line to get the id and the vector
+                # the first number will be the id
+                # the rest of the numbers will be the vector
+                id = int(line.split(",")[0])
+                vect = [float(e) for e in line.split(",")[1:]]
+                # calculate the score of the vector
+                score = self._cal_score(query, vect)
+                q.append((-score, id, vect))
+                # we want to limit the size of the ram usage so we will pop the smallest element from the queue
+                if sys.getsizeof(q) + sys.getsizeof(nearest_centroids) >= ram_size_limit:
+                    q.popleft()
+
+
+            f.close()
+
+
+        # now we have the top k vectors in the heap
+        # we will pop them from the heap and return them
+        ids_scores = []
+        for _ in range(top_k):
+            score, id, vect = heapq.heappop(heap)
+            ids_scores.append(id)
+            
+        return ids_scores
 
     def _cal_score(self, vec1, vec2):
         dot_product = np.dot(vec1, vec2)
@@ -241,6 +389,7 @@ class VecDB:
 
 
     def _build_index(self, db_vectors, src = "", dest = "", new_db = True):
+        self.dest = dest
         # now let's create the centroids on part of the vectors only to speed up the process
         if new_db == False:
             self.build_part_of_db(db_vectors, src, dest)
@@ -249,7 +398,7 @@ class VecDB:
         # number of vectors to use to create the centroids
         n_vectors_train = ceil(len(db_vectors) * 0.5)
         
-        num_centroids = ceil(n_vectors_train / self.num_vectors_per_cluster)
+        num_centroids = 300 #ceil(n_vectors_train / self.num_vectors_per_cluster)
 
         self.num_centroids = num_centroids
 
