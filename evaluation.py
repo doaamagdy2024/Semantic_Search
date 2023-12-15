@@ -74,6 +74,7 @@ if __name__ == "__main__":
     db = VecDB(new_db=new_db, file_path="100K")
 
     # first insert the first 100K records ----------------------------------------------------------------
+    print("inserting 100K records---------------------------------------------------------------")
     records_dict = [{"id": i, "embed": list(row)} for i, row in enumerate(records_np[:100000])]
     db.insert_records(records_dict, src = "100K", dest = "100K", new_db= new_db)
     new_db = False
@@ -86,6 +87,7 @@ if __name__ == "__main__":
 
     # now insert up to 1M records ----------------------------------------------------------------------
     # so we need to insert 900K records
+    print("inserting 1M records---------------------------------------------------------------")
     records_dict = [{"id": i + 100000, "embed": list(row)} for i, row in enumerate(records_np[100000:1000000])]
     db.insert_records(records_dict, new_db=new_db, src= "100K", dest="1M")
 
@@ -98,6 +100,7 @@ if __name__ == "__main__":
     # now insert up to 5M records ----------------------------------------------------------------------
     # so we need to insert 4M records
     # insert them million by million
+    print("inserting 5M records---------------------------------------------------------------")
     for i in range(4):
         records_dict = [{"id": i + 1000000 + 1000000 * i, "embed": list(row)} for i, row in enumerate(records_np[1000000 * i:1000000 * (i + 1)])]
         db.insert_records(records_dict, new_db=new_db, src= "1M", dest="5M")
@@ -111,6 +114,7 @@ if __name__ == "__main__":
     # now insert up to 10M records ----------------------------------------------------------------------
     # so we need to insert 5M records
     # insert them million by million
+    print("inserting 10M records---------------------------------------------------------------")
     for i in range(5):
         records_dict = [{"id": i + 5000000 + 1000000 * i, "embed": list(row)} for i, row in enumerate(records_np[1000000 * i:1000000 * (i + 1)])]
         db.insert_records(records_dict, new_db=new_db, src= "5M", dest="10M")
@@ -124,6 +128,7 @@ if __name__ == "__main__":
     # now insert up to 15M records ----------------------------------------------------------------------
     # so we need to insert 5M records
     # isnert them million by million
+    print("inserting 15M records---------------------------------------------------------------")
     for i in range(5): 
         records_dict = [{"id": i + 10000000 + 1000000 * i, "embed": list(row)} for i, row in enumerate(records_np[1000000 * i:1000000 * (i + 1)])]
         db.insert_records(records_dict, new_db=new_db, src= "10M", dest="15M")
@@ -137,6 +142,7 @@ if __name__ == "__main__":
     # now insert up to 20M records ----------------------------------------------------------------------
     # so we need to insert 5M records
     # insert them million by million
+    print("inserting 20M records---------------------------------------------------------------")
     for i in range(5):
         records_dict = [{"id": i + 15000000 + 1000000 * i, "embed": list(row)} for i, row in enumerate(records_np[1000000 * i:1000000 * (i + 1)])]
         db.insert_records(records_dict, new_db=new_db, src= "15M", dest="20M")
