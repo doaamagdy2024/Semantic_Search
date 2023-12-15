@@ -50,6 +50,7 @@ class VecDB:
         self.centroids = []
         self.kmeans = None
         self.num_centroids = 0
+        self.dest = ""
         # we will store the clusters in files
         # each file will have a centroid id
         # and the vectors that belong to that centroid
@@ -77,10 +78,20 @@ class VecDB:
 
     # TODO: change this function to retreive from the indexed Inverted file index db
     def retrive(self, query: Annotated[List[float], 70], top_k = 5):
+        if self.file_path == "":
+            n = 5
+        elif self.file_path == "10K":
+            n = 10
+        elif self.file_path == "100K":
+            n = 20
+        elif self.dest == "1M":
+            n = 30
+        else:
+            n = 40
         # now we need to find the n closest centroids to the query
         # we will use the kmeans model to find the closest centroids
         # gen n centroids where n is a hyperparameter
-        n = 5 # number of nearest centroids to get
+        #n = 5 # number of nearest centroids to get
         ###########################################################################
         # load the kmeans model from the pickle file
         with open(f"{self.file_path}/old_kmeans.pickle", "rb") as fin:
@@ -134,7 +145,16 @@ class VecDB:
 
 
     def _retrive_directly(self, query: Annotated[List[float], 70], top_k = 5):
-        n = 30
+        if self.dest == "":
+            n = 5
+        elif self.dest == "10K":
+            n = 10
+        elif self.dest == "100K":
+            n = 20
+        elif self.dest == "1M":
+            n = 30
+        else:
+            n = 40
         # as numy float is c double we need to convert it to python float
         query = list(query)
         #print("query", query)
@@ -208,7 +228,7 @@ class VecDB:
         # we need to assign each vector to the closest centroid
         # we will use the kmeans model to find the closest centroid of each vector
         # then insert this vector to the file of this centroid
-
+        self.dest = dest
         for vec in db_vectors:
             centroid = self.kmeans.predict([vec.vect])[0]
             # now we have the centroid
