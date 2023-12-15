@@ -59,7 +59,7 @@ class VecDBIF:
         # load the kmeans model from the pickle file
         with open("test/old_kmeans.pickle", "rb") as fin:
             self.kmeans = pickle.load(fin)
-            
+        ###########################################################################
         
         nearest_centroids = sorted(self.kmeans.cluster_centers_, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
         # # now we need to get the label of each centroid

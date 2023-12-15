@@ -58,10 +58,10 @@ def eval(results: List[Result]):
 
 
 if __name__ == "__main__":
-    num_records = 10000
+    num_records = 100000
     new_db = True
     # create the db
-    db = VecDB(new_db=new_db, files_path="10k")
+    db = VecDB(new_db=new_db, files_path="100K")
     worst_db = VecDBWorst(new_db=new_db)
     ivf_db = VecDBIF(new_db=new_db)
     # generate random records with ceil(num_records / 1M) vectors each time
