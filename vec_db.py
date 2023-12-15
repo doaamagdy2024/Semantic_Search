@@ -90,7 +90,7 @@ class VecDB:
         nearest_centroids = sorted(self.kmeans.cluster_centers_, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
         # # now we need to get the label of each centroid
         nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
-        print("nearest_centroids_kmeans", nearest_centroids)
+        #print("nearest_centroids_kmeans", nearest_centroids)
 
         # now we need to search in the files of the nearest centroids
         # we will get the top k vectors from each file
@@ -134,7 +134,7 @@ class VecDB:
 
 
     def _retrive_directly(self, query: Annotated[List[float], 70], top_k = 5):
-        n = 10
+        n = 30
         # as numy float is c double we need to convert it to python float
         query = list(query)
         #print("query", query)
@@ -217,7 +217,7 @@ class VecDB:
                 row_str = f"{vec.id}," + ",".join([str(e) for e in vec.vect])
                 fout.write(f"{row_str}\n")
 
-        print("Done building part of db")
+        #print("Done building part of db")
 
 
     def _build_index(self, db_vectors, src = "", dest = "", new_db = True):
@@ -233,8 +233,8 @@ class VecDB:
 
         self.num_centroids = num_centroids
 
-        print("n_vectors_train", n_vectors_train)
-        print("num_centroids", num_centroids)
+        # print("n_vectors_train", n_vectors_train)
+        # print("num_centroids", num_centroids)
 
         self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors]) 
         
@@ -253,7 +253,7 @@ class VecDB:
 
         # now store each cluster in a file
         # create a file for each centroid
-        print("Start storing index")
+        #print("Start storing index")
         for centroid in clusters:
             with open(f"{self.file_path}/cluster_{centroid}.csv", "w") as fout:
                 for vec in clusters[centroid]:
@@ -272,4 +272,4 @@ class VecDB:
         with open(f"{self.file_path}/old_kmeans.pickle", "wb") as fout:
             pickle.dump(self.kmeans, fout)
             
-        print("Done building index")
+        #print("Done building index")

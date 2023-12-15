@@ -119,6 +119,10 @@ class VecDBhnsw:
         entry_node: node = self.hnsw_structure[0].get(list(self.hnsw_structure[0].keys())[0])
         min_score = self._cal_score(query, entry_node.vect)
 
+        for layer in range(len(self.hnsw_structure)):
+            
+
+
         
     
 
