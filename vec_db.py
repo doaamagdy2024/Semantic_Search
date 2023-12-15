@@ -19,7 +19,7 @@ class vector:
 
 
 class VecDB:
-    def __init__(self, file_path = "saved_db.csv", new_db = True) -> None:
+    def __init__(self, file_path = "10K", new_db = True) -> None:
         
         # hyperparameters
         self.num_vectors_per_cluster = 200
