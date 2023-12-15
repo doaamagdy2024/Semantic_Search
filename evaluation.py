@@ -80,7 +80,7 @@ if __name__ == "__main__":
     new_db = False
 
     # now run the queries
-    res = run_queries(db, records_np, 5, 1)
+    res = run_queries(db, records_np[:100000], 5, 1)
 
     print("restul for 100K records")
     print(eval(res))
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     db.insert_records(records_dict, new_db=new_db, src= "100K", dest="1M")
 
     # now run the queries
-    res = run_queries(db, records_np, 5, 1)
+    res = run_queries(db, records_np[0:1000000], 5, 1)
 
     print("restul for 1M records")
     print(eval(res))
@@ -106,7 +106,7 @@ if __name__ == "__main__":
         db.insert_records(records_dict, new_db=new_db, src= "1M", dest="5M")
 
     # now run the queries
-    res = run_queries(db, records_np, 5, 1)
+    res = run_queries(db, records_np[0:5*10**6], 5, 1)
 
     print(f"restul for 5M records")
     print(eval(res))
@@ -120,7 +120,7 @@ if __name__ == "__main__":
         db.insert_records(records_dict, new_db=new_db, src= "5M", dest="10M")
 
     # now run the queries
-    res = run_queries(db, records_np, 5, 1)
+    res = run_queries(db, records_np[0:10*10**6], 5, 1)
 
     print(f"restul for 10M records")
     print(eval(res))
@@ -134,7 +134,7 @@ if __name__ == "__main__":
         db.insert_records(records_dict, new_db=new_db, src= "10M", dest="15M")
 
     # now run the queries
-    res = run_queries(db, records_np, 5, 1)
+    res = run_queries(db, records_np[0:15*10**6], 5, 1)
 
     print(f"restul for 15M records")
     print(eval(res))
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         db.insert_records(records_dict, new_db=new_db, src= "15M", dest="20M")
 
     # now run the queries
-    res = run_queries(db, records_np, 5, 1)
+    res = run_queries(db, records_np[0:20*10**6], 5, 1)
 
     print(f"restul for 20M records")
     print(eval(res))
