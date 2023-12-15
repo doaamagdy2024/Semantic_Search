@@ -140,10 +140,30 @@ class VecDB:
         return cosine_similarity
     
     
+    def build_part_of_db(self, db_vectors, src, dest):
+        # first copy the files of the clusters from the old db
+        copy_files(src, dest)
+        # now we have the centorids and the clusters
+        # we need to assign each vector to the closest centroid
+        # we will use the kmeans model to find the closest centroid of each vector
+        # then insert this vector to the file of this centroid
+
+        for vec in db_vectors:
+            centroid = self.kmeans.predict([vec.vect])[0]
+            # now we have the centroid
+            # we need to insert this vector to the file of this centroid
+            with open(f"{dest}/cluster_{centroid}.csv", "a") as fout:
+                row_str = f"{vec.id}," + ",".join([str(e) for e in vec.vect])
+                fout.write(f"{row_str}\n")
+
+        print("Done building part of db")
 
 
     def _build_index(self, db_vectors, src, dest, new_db = True):
         # now let's create the centroids on part of the vectors only to speed up the process
+        if new_db == False:
+            self.build_part_of_db(db_vectors, src, dest)
+            return
 
         # number of vectors to use to create the centroids
         n_vectors_train = ceil(len(db_vectors) * 0.5)
@@ -183,6 +203,8 @@ class VecDB:
             for centroid in self.centroids:
                 row_str = ",".join([str(e) for e in centroid])
                 fout.write(f"{row_str}\n")
+
+        ##################################################################################
         # save the kmeans model to a pickle file
         with open(f"{self.file_path}/old_kmeans.pickle", "wb") as fout:
             pickle.dump(self.kmeans, fout)
