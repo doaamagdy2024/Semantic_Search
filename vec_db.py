@@ -87,7 +87,7 @@ class VecDB:
             self.kmeans = pickle.load(fin)
         ###########################################################################
         
-        nearest_centroids = sorted(self.kmeans.cluster_centers_, key=lambda centroid: self._cal_score(query, centroid))[:n]
+        nearest_centroids = sorted(self.kmeans.cluster_centers_, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
         # # now we need to get the label of each centroid
         nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
         print("nearest_centroids_kmeans", nearest_centroids)
@@ -135,10 +135,16 @@ class VecDB:
 
     def _retrive_directly(self, query: Annotated[List[float], 70], top_k = 5):
         n = 167
+        # as numy float is c double we need to convert it to python float
+        query = list(query)
+        print("query", query)
         
-        nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid))[:n]
+        #query = np.array(query).reshape(1, -1)
+        nearest_one = self.kmeans.predict(query)[0]
+        print("nearest_one------------------------", nearest_one)
+        
+        nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
         # # now we need to get the label of each centroid
-        print("nearest_centroids after sort", nearest_centroids)
         print("----------------------------------------")
         nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
         print("nearest_centroids_directly", nearest_centroids)
@@ -147,6 +153,8 @@ class VecDB:
         # we will get the top k vectors from each file
         heap = []
         heapq.heapify(heap)
+        all_scores = []
+        heapq.heapify(all_scores)
         for centroid in nearest_centroids:
             # open the file of the centroid
             f = open(f"{self.file_path}/cluster_{centroid}.csv", "r")
@@ -159,11 +167,13 @@ class VecDB:
                 # the first number will be the id
                 # the rest of the numbers will be the vector
                 id = int(line.split(",")[0])
-                vect = [float(e) for e in line.split(",")[1:]]
+                vect = [float(e) for e in line.split(",")[1:]] # [1:] to remove the id
                 # calculate the score of the vector
                 score = self._cal_score(query, vect)
+
                 # add it to the heap
                 heapq.heappush(heap, (-score, id, vect))
+                heapq.heappush(all_scores, (score, id))
             f.close()
         # now we have the top k vectors in the heap
         # we will pop them from the heap and return them
@@ -171,6 +181,18 @@ class VecDB:
         for _ in range(top_k):
             score, id, vect = heapq.heappop(heap)
             ids_scores.append(id)
+        
+        
+        # now write all the scores in a file 
+        f = open("scores.csv", "w")
+        while True:
+            score, id = heapq.heappop(all_scores)
+            f.write(f"{id},{score}\n")
+            if not all_scores:
+                break
+    
+
+        
 
         return ids_scores
 
@@ -201,7 +223,7 @@ class VecDB:
         print("Done building part of db")
 
 
-    def _build_index(self, db_vectors, src, dest, new_db = True):
+    def _build_index(self, db_vectors, src = "", dest = "", new_db = True):
         # now let's create the centroids on part of the vectors only to speed up the process
         if new_db == False:
             self.build_part_of_db(db_vectors, src, dest)
