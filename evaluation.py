@@ -104,12 +104,39 @@ if __name__ == "__main__":
     # now run the queries
     res = run_queries(db, records_np, 5, 10)
 
-    print(f"restul for {i + 2}M records")
+    print(f"restul for 5M records")
     print(eval(res))
 
     # now insert up to 10M records ----------------------------------------------------------------------
     # so we need to insert 5M records
     # insert them million by million
+    for i in range(5):
+        records_dict = [{"id": i + 5000000 + 1000000 * i, "embed": list(row)} for i, row in enumerate(records_np[1000000 * i:1000000 * (i + 1)])]
+        db.insert_records(records_dict)
+
+    # now run the queries
+    res = run_queries(db, records_np, 5, 10)
+
+    print(f"restul for 10M records")
+    print(eval(res))
+
+    # now insert up to 20M records ----------------------------------------------------------------------
+    # so we need to insert 10M records
+    # insert them million by million
+    for i in range(10):
+        records_dict = [{"id": i + 10000000 + 1000000 * i, "embed": list(row)} for i, row in enumerate(records_np[1000000 * i:1000000 * (i + 1)])]
+        db.insert_records(records_dict)
+
+    # now run the queries
+    res = run_queries(db, records_np, 5, 10)
+
+    print(f"restul for 20M records")
+    print(eval(res))
+    
+
+    
+
+
 
 
 
