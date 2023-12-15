@@ -18,7 +18,7 @@ class vector:
         self.centroid = None # the centroid that this vector belongs to
 
 
-class VecDBIF:
+class VecDB:
     def __init__(self, file_path = "saved_db.csv", new_db = True) -> None:
         
         # hyperparameters
