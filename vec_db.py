@@ -159,7 +159,7 @@ class VecDB:
         print("Done building part of db")
 
 
-    def _build_index(self, db_vectors, src, dest, new_db = True):
+    def _build_index(self, db_vectors, src = "10K", dest = "10K", new_db = True):
         # now let's create the centroids on part of the vectors only to speed up the process
         if new_db == False:
             self.build_part_of_db(db_vectors, src, dest)
