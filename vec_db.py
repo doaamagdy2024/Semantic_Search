@@ -62,7 +62,7 @@ class VecDB:
                 for file in os.listdir(self.file_path):
                     os.remove(f"{self.file_path}/{file}")
     
-    def insert_records(self, rows: List[Dict[int, Annotated[List[float], 70]]], src, dest, new_db = True): # anonoated is a type hint means that the list has 70 elements of type float
+    def insert_records(self, rows: List[Dict[int, Annotated[List[float], 70]]], src = "10K", dest = "10K", new_db = True): # anonoated is a type hint means that the list has 70 elements of type float
         # create a list to store all the vectors
         db_vectors = []
         with open(f"{self.file_path}/old_db.csv", "w") as fout:
