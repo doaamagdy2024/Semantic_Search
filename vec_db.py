@@ -62,7 +62,7 @@ class VecDB:
                 for file in os.listdir(self.file_path):
                     os.remove(f"{self.file_path}/{file}")
     
-    def insert_records(self, rows: List[Dict[int, Annotated[List[float], 70]]], src = "10K", dest = "10K", new_db = True): # anonoated is a type hint means that the list has 70 elements of type float
+    def insert_records(self, rows: List[Dict[int, Annotated[List[float], 70]]], src, dest, new_db = True): # anonoated is a type hint means that the list has 70 elements of type float
         # create a list to store all the vectors
         db_vectors = []
         with open(f"{self.file_path}/old_db.csv", "w") as fout:
@@ -87,7 +87,7 @@ class VecDB:
             self.kmeans = pickle.load(fin)
         ###########################################################################
         
-        nearest_centroids = sorted(self.kmeans.cluster_centers_, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
+        nearest_centroids = sorted(self.kmeans.cluster_centers_, key=lambda centroid: self._cal_score(query, centroid))[:n]
         # # now we need to get the label of each centroid
         nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
         print("nearest_centroids_kmeans", nearest_centroids)
@@ -138,6 +138,8 @@ class VecDB:
         
         nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid))[:n]
         # # now we need to get the label of each centroid
+        print("nearest_centroids after sort", nearest_centroids)
+        print("----------------------------------------")
         nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
         print("nearest_centroids_directly", nearest_centroids)
 
