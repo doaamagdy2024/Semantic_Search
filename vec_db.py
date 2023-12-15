@@ -80,7 +80,7 @@ class VecDB:
         # now we need to find the n closest centroids to the query
         # we will use the kmeans model to find the closest centroids
         # gen n centroids where n is a hyperparameter
-        n = 20 # number of nearest centroids to get
+        n = 5 # number of nearest centroids to get
         ###########################################################################
         # load the kmeans model from the pickle file
         with open(f"{self.file_path}/old_kmeans.pickle", "rb") as fin:
