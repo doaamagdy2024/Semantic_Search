@@ -11,6 +11,30 @@ import os
 # we have to use better indexing method to speed up the retrival process
 # we will use FAISS to build index
 
+
+import shutil
+import os
+
+def copy_files(src_folder, dest_folder):
+    # Make sure the source folder exists
+    if not os.path.exists(src_folder):
+        print(f"Source folder '{src_folder}' does not exist.")
+        return
+
+    # Make sure the destination folder exists, create it if necessary
+    if not os.path.exists(dest_folder):
+        os.makedirs(dest_folder)
+
+    # Get a list of all files in the source folder
+    files = os.listdir(src_folder)
+
+    # Copy each file from the source folder to the destination folder
+    for file in files:
+        src_path = os.path.join(src_folder, file)
+        dest_path = os.path.join(dest_folder, file)
+        shutil.copy(src_path, dest_path)
+        print(f"File '{file}' copied to '{dest_folder}'.")
+
 class vector:
     def __init__(self, id, vect) -> None:
         self.id = id
@@ -114,6 +138,8 @@ class VecDB:
         norm_vec2 = np.linalg.norm(vec2)
         cosine_similarity = dot_product / (norm_vec1 * norm_vec2)
         return cosine_similarity
+    
+    
 
 
     def _build_index(self, db_vectors):

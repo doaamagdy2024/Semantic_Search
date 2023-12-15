@@ -10,7 +10,9 @@ from math import ceil
 AVG_OVERX_ROWS = 10
 
 QUERY_SEED_NUMBER = 10
-DB_SEED_NUMBER = 20
+DB_SEED_NUMBER = 50
+
+
 
 @dataclass
 class Result:
@@ -62,55 +64,89 @@ def eval(results: List[Result]):
 
 
 if __name__ == "__main__":
-    num_records = 100000
-    new_db = True
-    # create the db
-    db = VecDB(new_db=new_db, file_path="100K")
-    worst_db = VecDBWorst(new_db=new_db)
-    # ivf_db = VecDBIF(new_db=new_db, file_path="100K")
-    # generate random records with ceil(num_records / 1M) vectors each time
-    num_of_iterations = ceil(num_records / 1000000)
-    if num_of_iterations == 0:
-        num_of_iterations = 1
-    # insert the records in the db but take care as the number of records may be less than 1M
-    # check the number of records if less than 1M then insert the number of records only
-    # we will use a fixed seed to generate random records
-    #rnd = np.random.RandomState(50)
-#    np.random.seed(50)    
+    num_records = 10**7*2
     rng = np.random.default_rng(DB_SEED_NUMBER)
     records_np = rng.random((num_records, 70), dtype=np.float32)
-    
-    #records_np = rnd.random((num_records, 70), dtype=np.float32)
-    # for i in range(num_of_iterations):
-    #     num_records_to_insert = num_records - (i * 1000000)
-    #     records_to_insert = records_np[i * 1000000: i * 1000000 + num_records_to_insert - 1]
-    #     records_dict = [{"id": i + (i * 1000000), "embed": list(row)} for i, row in enumerate(records_np)]
-    #     db.insert_records(records_dict, first_insert = i == 0)
-        
-    # insert the records in the worst db
-    records_dict = [{"id": i, "embed": list(row)} for i, row in enumerate(records_np)]
-    worst_db.insert_records(records_dict)
+
+    new_db = True
+
+    # create an obj from class db
+    db = VecDB(new_db=new_db, file_path="100K")
+
+    # first insert the first 100K records ----------------------------------------------------------------
+    records_dict = [{"id": i, "embed": list(row)} for i, row in enumerate(records_np[:100000])]
     db.insert_records(records_dict)
 
-    # for i in range(num_of_iterations):
-    #     num_records_to_insert = num_records - (i * 1000000)
-    #     records_np = rnd.random((num_records_to_insert, 70))
-    #     records_dict = [{"id": i + (i * 1000000), "embed": list(row)} for i, row in enumerate(records_np)]
-    #     db.insert_records(records_dict, first_insert = i == 0)
-    # res = run_queries(db, records_np, 5, 1)
-    res_worst = run_queries(worst_db, records_np, 5, 1)
-    res_ivf = run_queries(db, records_np, 5, 1)
-    # eval_res = eval(res)
-    eval_res_worst = eval(res_worst)
-    eval_res_ivf = eval(res_ivf)
+    # now run the queries
+    res = run_queries(db, records_np, 5, 10)
+
+    print("restul for 100K records")
+    print(eval(res))
+
+    # now insert up to 1M records ----------------------------------------------------------------------
+    # so we need to insert 900K records
+    records_dict = [{"id": i + 100000, "embed": list(row)} for i, row in enumerate(records_np[100000:1000000])]
+    db.insert_records(records_dict)
+
+    # now run the queries
+    res = run_queries(db, records_np, 5, 10)
+
+    print("restul for 1M records")
+    print(eval(res))
+
+    # now insert up to 5M records ----------------------------------------------------------------------
+    # so we need to insert 4M records
+    # insert them million by million
+    for i in range(4):
+        records_dict = [{"id": i + 1000000 + 1000000 * i, "embed": list(row)} for i, row in enumerate(records_np[1000000 * i:1000000 * (i + 1)])]
+        db.insert_records(records_dict)
+
+    # now run the queries
+    res = run_queries(db, records_np, 5, 10)
+
+    print(f"restul for {i + 2}M records")
+    print(eval(res))
+
+    # now insert up to 10M records ----------------------------------------------------------------------
+    # so we need to insert 5M records
+    # insert them million by million
+
+
+
+
     
-    # calculate the recall
-    recall = len(set(res_ivf[0].db_ids).intersection(set(res_worst[0].db_ids))) / len(set(res_worst[0].db_ids))
     
-    print("recall = ", recall)
-    print("db = ", eval_res_ivf)
-    print("worst = ", eval_res_worst)
-    print("ivf = ", eval_res_ivf)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     # if we want to calculate the recall
