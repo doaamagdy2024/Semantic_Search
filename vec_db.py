@@ -61,7 +61,7 @@ class VecDB:
                 for file in os.listdir(self.file_path):
                     os.remove(f"{self.file_path}/{file}")
     
-    def insert_records(self, rows: List[Dict[int, Annotated[List[float], 70]]], src, dest, new_db = True): # anonoated is a type hint means that the list has 70 elements of type float
+    def insert_records(self, rows: List[Dict[int, Annotated[List[float], 70]]], src = "10K", dest = "10K", new_db = True): # anonoated is a type hint means that the list has 70 elements of type float
         # create a list to store all the vectors
         db_vectors = []
         with open(f"{self.file_path}/old_db.csv", "w") as fout:
@@ -159,7 +159,7 @@ class VecDB:
         print("Done building part of db")
 
 
-    def _build_index(self, db_vectors, src = "10K", dest = "10K", new_db = True):
+    def _build_index(self, db_vectors, src, dest, new_db = True):
         # now let's create the centroids on part of the vectors only to speed up the process
         if new_db == False:
             self.build_part_of_db(db_vectors, src, dest)
