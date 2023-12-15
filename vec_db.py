@@ -134,27 +134,27 @@ class VecDB:
 
 
     def _retrive_directly(self, query: Annotated[List[float], 70], top_k = 5):
-        n = 167
+        n = 10
         # as numy float is c double we need to convert it to python float
         query = list(query)
-        print("query", query)
+        #print("query", query)
         
         #query = np.array(query).reshape(1, -1)
-        nearest_one = self.kmeans.predict(query)[0]
-        print("nearest_one------------------------", nearest_one)
+        # nearest_one = self.kmeans.predict(query)[0]
+        # print("nearest_one------------------------", nearest_one)
         
         nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
         # # now we need to get the label of each centroid
-        print("----------------------------------------")
+        #print("----------------------------------------")
         nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
-        print("nearest_centroids_directly", nearest_centroids)
+        #print("nearest_centroids_directly", nearest_centroids)
 
         # now we need to search in the files of the nearest centroids
         # we will get the top k vectors from each file
         heap = []
         heapq.heapify(heap)
-        all_scores = []
-        heapq.heapify(all_scores)
+        # all_scores = []
+        # heapq.heapify(all_scores)
         for centroid in nearest_centroids:
             # open the file of the centroid
             f = open(f"{self.file_path}/cluster_{centroid}.csv", "r")
@@ -173,7 +173,7 @@ class VecDB:
 
                 # add it to the heap
                 heapq.heappush(heap, (-score, id, vect))
-                heapq.heappush(all_scores, (score, id))
+                #heapq.heappush(all_scores, (score, id))
             f.close()
         # now we have the top k vectors in the heap
         # we will pop them from the heap and return them
@@ -183,16 +183,13 @@ class VecDB:
             ids_scores.append(id)
         
         
-        # now write all the scores in a file 
-        f = open("scores.csv", "w")
-        while True:
-            score, id = heapq.heappop(all_scores)
-            f.write(f"{id},{score}\n")
-            if not all_scores:
-                break
-    
-
-        
+        # # now write all the scores in a file 
+        # f = open("scores.csv", "w")
+        # while True:
+        #     score, id = heapq.heappop(all_scores)
+        #     f.write(f"{id},{score}\n")
+        #     if not all_scores:
+        #         break       
 
         return ids_scores
 
