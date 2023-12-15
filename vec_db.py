@@ -7,6 +7,8 @@ from sklearn.cluster import KMeans
 import heapq
 import pickle
 import os
+import faiss
+
 # in this file we will implement a better version of VecDB
 # we have to use better indexing method to speed up the retrival process
 # we will use FAISS to build index
@@ -50,6 +52,7 @@ class VecDB:
         self.centroids = []
         self.kmeans = None
         self.num_centroids = 0
+        self.index_hnsw = faiss.IndexHNSWFlat(70, 32)
         # we will store the clusters in files
         # each file will have a centroid id
         # and the vectors that belong to that centroid
@@ -61,7 +64,14 @@ class VecDB:
             if os.path.exists(self.file_path):
                 for file in os.listdir(self.file_path):
                     os.remove(f"{self.file_path}/{file}")
-    
+        else:
+            # load the centroids from the csv file to self.centroids
+            with open(f"{self.file_path}/old_centroids.csv", "r") as fin:
+                for line in fin:
+                    self.centroids.append([float(e) for e in line.split(",")])
+            # add the centroids to the index
+            self.index_hnsw.add(np.array(self.centroids).astype('float32'))
+            
     def insert_records(self, rows: List[Dict[int, Annotated[List[float], 70]]], src = "10K", dest = "10K", new_db = True): # anonoated is a type hint means that the list has 70 elements of type float
         # create a list to store all the vectors
         db_vectors = []
@@ -81,6 +91,8 @@ class VecDB:
         # we will use the kmeans model to find the closest centroids
         # gen n centroids where n is a hyperparameter
         n = 20 # number of nearest centroids to get
+        if self.file_path == "10K":
+            n = 10
         ###########################################################################
         # load the kmeans model from the pickle file
         with open(f"{self.file_path}/old_kmeans.pickle", "rb") as fin:
@@ -250,5 +262,8 @@ class VecDB:
         # save the kmeans model to a pickle file
         with open(f"{self.file_path}/old_kmeans.pickle", "wb") as fout:
             pickle.dump(self.kmeans, fout)
-            
+        
+        # add the centroids to the index
+        self.index_hnsw.add(np.array(self.centroids).astype('float32'))
+        
         print("Done building index")
