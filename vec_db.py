@@ -33,7 +33,7 @@ def copy_files(src_folder, dest_folder):
         src_path = os.path.join(src_folder, file)
         dest_path = os.path.join(dest_folder, file)
         shutil.copy(src_path, dest_path)
-        print(f"File '{file}' copied to '{dest_folder}'.")
+        #print(f"File '{file}' copied to '{dest_folder}'.")
 
 class vector:
     def __init__(self, id, vect) -> None:
