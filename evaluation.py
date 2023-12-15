@@ -5,6 +5,7 @@ import time
 from dataclasses import dataclass
 from typing import List
 from vec_db import VecDB
+from inverted_file_index import VecDBIF
 from math import ceil
 AVG_OVERX_ROWS = 10
 
@@ -62,6 +63,7 @@ if __name__ == "__main__":
     # create the db
     db = VecDB(new_db=new_db, files_path="10k")
     worst_db = VecDBWorst(new_db=new_db)
+    ivf_db = VecDBIF(new_db=new_db)
     # generate random records with ceil(num_records / 1M) vectors each time
     num_of_iterations = ceil(num_records / 1000000)
     if num_of_iterations == 0:
@@ -81,6 +83,7 @@ if __name__ == "__main__":
     # insert the records in the worst db
     records_dict = [{"id": i, "embed": list(row)} for i, row in enumerate(records_np)]
     worst_db.insert_records(records_dict)
+    ivf_db.insert_records(records_dict)
 
     # for i in range(num_of_iterations):
     #     num_records_to_insert = num_records - (i * 1000000)
@@ -89,14 +92,18 @@ if __name__ == "__main__":
     #     db.insert_records(records_dict, first_insert = i == 0)
     res = run_queries(db, records_np, 5, 1)
     res_worst = run_queries(worst_db, records_np, 5, 1)
+    res_ivf = run_queries(ivf_db, records_np, 5, 1)
     eval_res = eval(res)
     eval_res_worst = eval(res_worst)
+    eval_res_ivf = eval(res_ivf)
     
     # calculate the recall
     recall = len(set(res[0].db_ids).intersection(set(res_worst[0].db_ids))) / len(set(res_worst[0].db_ids))
     
     print("recall = ", recall)
-    print(eval(res))
+    print("db = ", eval_res)
+    print("worst = ", eval_res_worst)
+    print("ivf = ", eval_res_ivf)
 
 
     # if we want to calculate the recall

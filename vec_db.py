@@ -55,7 +55,9 @@ class VecDB:
 
     # TODO: change this function to retreive from the indexed Inverted file index db
     def retrive(self, query: Annotated[List[float], 70], top_k = 5):
-
+        #######################################################
+        print("query", query)
+        #######################################################
         # first open the file
         f = open("centroids.pkl", "rb")
 
@@ -76,8 +78,9 @@ class VecDB:
     
         #print("centroids with no id are", centroids_with_no_id)
         # print("query is", query)
-        nearest_centroid, _ = VQ.vq(query, centroids_with_no_id)
+        nearest_centroid, distance = VQ.vq(query, centroids_with_no_id)
         print("Before: nearest_centroid", nearest_centroid)
+        print("distance", distance)
 
         #nearest_centroid = self.centroids[nearest_centroid[0]][0]
         print("After: nearest_centroid", nearest_centroid)
@@ -115,6 +118,13 @@ class VecDB:
         for _ in range(top_k):
             score, id, vect = heapq.heappop(heap)
             ids_scores.append(id)
+        #################################################
+        # now we have the top k ids
+        # write them to a csv file
+        with open("test/new_ids.csv", "w") as fout:
+            for id in ids_scores:
+                fout.write(f"{id}\n")
+        #################################################
 
         return ids_scores
 
@@ -171,14 +181,28 @@ class VecDB:
                     v = [vec.id] + vec.vect
                     pickle.dump(v, fout)
         
+        ###############################################################
+        v_list = []
         # we need to store the centroids in a file
         with open(f"centroids.pkl", "wb") as fout:
             # write the centroid id, and its vector
             for centroid in self.centroids:
                 label = kmeans.predict([centroid])[0]
                 v = [label] + list(centroid)
+                ##################
+                v_list.append(v)
+                ##################
                 # fout.write(f"{row_str}\n")
                 pickle.dump(v, fout)
+        
+        ############################################################################################################
+        # # we need to store the centroids in a readable file
+        with open(f"test/new_centroids.csv", "w") as fout:
+            # write the centroid id, and its vector
+            for centroid in v_list:
+                row_str = f"{centroid[0]}," + ",".join([str(e) for e in centroid[1:]])
+                fout.write(f"{row_str}\n")
+        ############################################################################################################
         
         # # we need to store the kmeans model to use it later
         # # we will store it in a file
