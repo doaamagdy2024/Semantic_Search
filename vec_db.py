@@ -22,7 +22,7 @@ class vector:
 
 
 class VecDB:
-    def __init__(self, files_path = "saved_db.csv",  new_db = True) -> None:
+    def __init__(self, file_path = "saved_db.csv",  new_db = True) -> None:
         # hyperparameters
         self.num_vectors_per_cluster = 50
         self.centroids = []
@@ -31,17 +31,17 @@ class VecDB:
         # and the vectors that belong to that centroid
         self.kmeans = None
         # file path to save the db        
-        self.files_path = files_path
+        self.file_path = file_path
         if new_db:
             # delete files in the folder if exist
-            if os.path.exists(self.files_path):
-                for file in os.listdir(self.files_path):
-                    os.remove(f"{self.files_path}/{file}")
+            if os.path.exists(self.file_path):
+                for file in os.listdir(self.file_path):
+                    os.remove(f"{self.file_path}/{file}")
     # add parameter to check if not the first time to insert records
     def insert_records(self, rows: List[Dict[int, Annotated[List[float], 70]]], first_insert = True): # anonoated is a type hint means that the list has 70 elements of type float
         # create a list to store all the vectors
         db_vectors = []
-        with open(f"{self.files_path}/saved_db.csv", "a+") as fout:
+        with open(f"{self.file_path}/saved_db.csv", "a+") as fout:
             # the previous line will open the file in append mode
             for row in rows:
                 id, embed = row["id"], row["embed"]
@@ -76,7 +76,7 @@ class VecDB:
         n = 2 # number of nearest centroids to get
         ###########################################################################
         # load the kmeans model from the pickle file
-        with open("test/new_kmeans.pickle", "rb") as fin:
+        with open(f"{self.file_path}/new_kmeans.pickle", "rb") as fin:
             self.kmeans = pickle.load(fin)
         ###########################################################################
         
@@ -94,7 +94,7 @@ class VecDB:
         heapq.heapify(heap)
         for centroid in nearest_centroids:
             # open the file of the centroid
-            f = open(f"{self.files_path}/cluster_{centroid}.pkl", "rb")
+            f = open(f"{self.file_path}/cluster_{centroid}.pkl", "rb")
             # read the file line by line
             while True:
                 try:
@@ -105,7 +105,7 @@ class VecDB:
                     heapq.heappush(heap, (-score, id, vect))
                 except:
                     break
-            # f = open(f"{self.files_path}/cluster_{centroid}.csv", "r")
+            # f = open(f"{self.file_path}/cluster_{centroid}.csv", "r")
             # # read the file line by line
             # while True:
             #     line = f.readline()
@@ -238,8 +238,8 @@ class VecDB:
         print("Start storing index")
         i = 0
         for centroid in clusters:
-            # we will create new file in the folder self.files_path
-            with open(f"{self.files_path}/cluster_{centroid}.pkl", "wb") as fout:
+            # we will create new file in the folder self.file_path
+            with open(f"{self.file_path}/cluster_{centroid}.pkl", "wb") as fout:
                 for vec in clusters[centroid]:
                     i += 1
                     v = [vec.id] + vec.vect
@@ -269,7 +269,7 @@ class VecDB:
         ############################################################################################################
         
         # save the kmeans model to a pickle file
-        with open("test/new_kmeans.pickle", "wb") as fout:
+        with open(f"{self.file_path}/new_kmeans.pickle", "wb") as fout:
             pickle.dump(kmeans, fout)
 
         print("Done building index")
@@ -279,12 +279,12 @@ class VecDB:
         
         ###########################################################################
         # load the kmeans model from the pickle file
-        with open("test/new_kmeans.pickle", "rb") as fin:
+        with open(f"{self.file_path}/new_kmeans.pickle", "rb") as fin:
             self.kmeans = pickle.load(fin)
         ###########################################################################
     
         clusters = {}
-        self.centroids = np.load(f"{self.files_path}/centroids.pkl")
+        self.centroids = np.load(f"{self.file_path}/centroids.pkl")
         # we can find the closest centroid by vq function of scipy
         # centroids_with_no_id = [centroid[1:] for centroid in self.centroids]
         clusters_out_of_prediction, _ = VQ.vq([vec.vect for vec in db_vectors], centroids_with_no_id)
@@ -308,7 +308,7 @@ class VecDB:
         print("Start storing index")
         for centroid in clusters:
             # we will append to the file
-            with open(f"{self.files_path}/cluster_{centroid}.pkl", "a+") as fout:
+            with open(f"{self.file_path}/cluster_{centroid}.pkl", "a+") as fout:
                 for vec in clusters[centroid]:
                     row_str = f"{vec.id}," + ",".join([str(e) for e in vec.vect])
                     fout.write(f"{row_str}\n")
@@ -361,7 +361,7 @@ class VecDB:
         print("Start storing index")
 
         for centroid in clusters:
-            with open(f"{self.files_path}/cluster_{centroid.id}.pkl", "w") as fout:
+            with open(f"{self.file_path}/cluster_{centroid.id}.pkl", "w") as fout:
                 for vec in clusters[centroid]:
                     row_str = f"{vec.id}," + ",".join([str(e) for e in vec.vect])
                     fout.write(f"{row_str}\n")
