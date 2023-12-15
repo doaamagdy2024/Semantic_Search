@@ -6,6 +6,7 @@ from math import ceil
 from sklearn.cluster import KMeans
 import heapq
 import pickle
+import os
 # in this file we will implement a better version of VecDB
 # we have to use better indexing method to speed up the retrival process
 # we will use FAISS to build index
@@ -31,15 +32,15 @@ class VecDBIF:
         # file path to save the db        
         self.file_path = file_path
         if new_db:
-            # just open new file to delete the old one
-            with open(self.file_path, "w") as fout:
-                # if you need to add any head to the file
-                pass
+            # delete files in the folder if exist
+            if os.path.exists(self.file_path):
+                for file in os.listdir(self.file_path):
+                    os.remove(f"{self.file_path}/{file}")
     
     def insert_records(self, rows: List[Dict[int, Annotated[List[float], 70]]]): # anonoated is a type hint means that the list has 70 elements of type float
         # create a list to store all the vectors
         db_vectors = []
-        with open(self.file_path, "a+") as fout:
+        with open(f"{self.file_path}/old_db.csv", "w") as fout:
             for row in rows:
                 id, embed = row["id"], row["embed"]
                 row_str = f"{id}," + ",".join([str(e) for e in embed])
@@ -57,7 +58,7 @@ class VecDBIF:
         n = 2 # number of nearest centroids to get
         ###########################################################################
         # load the kmeans model from the pickle file
-        with open("test/old_kmeans.pickle", "rb") as fin:
+        with open(f"{self.file_path}/old_kmeans.pickle", "rb") as fin:
             self.kmeans = pickle.load(fin)
         ###########################################################################
         
@@ -75,7 +76,7 @@ class VecDBIF:
         heapq.heapify(heap)
         for centroid in nearest_centroids:
             # open the file of the centroid
-            f = open(f"cluster_{centroid}.csv", "r")
+            f = open(f"{self.file_path}/cluster_{centroid}.csv", "r")
             # read the file line by line
             while True:
                 line = f.readline()
@@ -145,7 +146,7 @@ class VecDBIF:
         # create a file for each centroid
         print("Start storing index")
         for centroid in clusters:
-            with open(f"cluster_{centroid}.csv", "w") as fout:
+            with open(f"{self.file_path}/cluster_{centroid}.csv", "w") as fout:
                 for vec in clusters[centroid]:
                     row_str = f"{vec.id}," + ",".join([str(e) for e in vec.vect])
                     fout.write(f"{row_str}\n")
@@ -157,7 +158,7 @@ class VecDBIF:
                 row_str = ",".join([str(e) for e in centroid])
                 fout.write(f"{row_str}\n")
         # save the kmeans model to a pickle file
-        with open("test/old_kmeans.pickle", "wb") as fout:
+        with open(f"{self.file_path}/old_kmeans.pickle", "wb") as fout:
             pickle.dump(self.kmeans, fout)
             
         print("Done building index")

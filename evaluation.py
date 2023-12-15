@@ -58,12 +58,12 @@ def eval(results: List[Result]):
 
 
 if __name__ == "__main__":
-    num_records = 10000
+    num_records = 1000000
     new_db = True
     # create the db
-    db = VecDB(new_db=new_db, file_path="10K")
+    db = VecDB(new_db=new_db, file_path="1M")
     worst_db = VecDBWorst(new_db=new_db)
-    ivf_db = VecDBIF(new_db=new_db)
+    ivf_db = VecDBIF(new_db=new_db, file_path="100K")
     # generate random records with ceil(num_records / 1M) vectors each time
     num_of_iterations = ceil(num_records / 1000000)
     if num_of_iterations == 0:
@@ -74,11 +74,11 @@ if __name__ == "__main__":
     rnd = np.random.RandomState(50)
     
     records_np = rnd.random((num_records, 70))
-    for i in range(num_of_iterations):
-        num_records_to_insert = num_records - (i * 1000000)
-        records_to_insert = records_np[i * 1000000: i * 1000000 + num_records_to_insert - 1]
-        records_dict = [{"id": i + (i * 1000000), "embed": list(row)} for i, row in enumerate(records_np)]
-        db.insert_records(records_dict, first_insert = i == 0)
+    # for i in range(num_of_iterations):
+    #     num_records_to_insert = num_records - (i * 1000000)
+    #     records_to_insert = records_np[i * 1000000: i * 1000000 + num_records_to_insert - 1]
+    #     records_dict = [{"id": i + (i * 1000000), "embed": list(row)} for i, row in enumerate(records_np)]
+    #     db.insert_records(records_dict, first_insert = i == 0)
         
     # insert the records in the worst db
     records_dict = [{"id": i, "embed": list(row)} for i, row in enumerate(records_np)]
@@ -90,18 +90,18 @@ if __name__ == "__main__":
     #     records_np = rnd.random((num_records_to_insert, 70))
     #     records_dict = [{"id": i + (i * 1000000), "embed": list(row)} for i, row in enumerate(records_np)]
     #     db.insert_records(records_dict, first_insert = i == 0)
-    res = run_queries(db, records_np, 5, 1)
+    # res = run_queries(db, records_np, 5, 1)
     res_worst = run_queries(worst_db, records_np, 5, 1)
     res_ivf = run_queries(ivf_db, records_np, 5, 1)
-    eval_res = eval(res)
+    # eval_res = eval(res)
     eval_res_worst = eval(res_worst)
     eval_res_ivf = eval(res_ivf)
     
     # calculate the recall
-    recall = len(set(res[0].db_ids).intersection(set(res_worst[0].db_ids))) / len(set(res_worst[0].db_ids))
+    # recall = len(set(res[0].db_ids).intersection(set(res_worst[0].db_ids))) / len(set(res_worst[0].db_ids))
     
-    print("recall = ", recall)
-    print("db = ", eval_res)
+    # print("recall = ", recall)
+    # print("db = ", eval_res)
     print("worst = ", eval_res_worst)
     print("ivf = ", eval_res_ivf)
 
