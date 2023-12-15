@@ -28,7 +28,7 @@ def run_queries(db, np_rows, top_k, num_runs):
         query = rng.random((1, 70), dtype=np.float32)
         
         tic = time.time()
-        db_ids = db.retrive(query, top_k)
+        db_ids = db._retrive_directly(query, top_k)
         toc = time.time()
         run_time = toc - tic
         
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     new_db = False
 
     # now run the queries
-    res = run_queries(db, records_np, 5, 10)
+    res = run_queries(db, records_np, 5, 1)
 
     print("restul for 100K records")
     print(eval(res))
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     db.insert_records(records_dict, new_db=new_db, src= "100K", dest="1M")
 
     # now run the queries
-    res = run_queries(db, records_np, 5, 10)
+    res = run_queries(db, records_np, 5, 1)
 
     print("restul for 1M records")
     print(eval(res))
@@ -106,7 +106,7 @@ if __name__ == "__main__":
         db.insert_records(records_dict, new_db=new_db, src= "1M", dest="5M")
 
     # now run the queries
-    res = run_queries(db, records_np, 5, 10)
+    res = run_queries(db, records_np, 5, 1)
 
     print(f"restul for 5M records")
     print(eval(res))
@@ -120,7 +120,7 @@ if __name__ == "__main__":
         db.insert_records(records_dict, new_db=new_db, src= "5M", dest="10M")
 
     # now run the queries
-    res = run_queries(db, records_np, 5, 10)
+    res = run_queries(db, records_np, 5, 1)
 
     print(f"restul for 10M records")
     print(eval(res))
@@ -134,7 +134,7 @@ if __name__ == "__main__":
         db.insert_records(records_dict, new_db=new_db, src= "10M", dest="15M")
 
     # now run the queries
-    res = run_queries(db, records_np, 5, 10)
+    res = run_queries(db, records_np, 5, 1)
 
     print(f"restul for 15M records")
     print(eval(res))
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         db.insert_records(records_dict, new_db=new_db, src= "15M", dest="20M")
 
     # now run the queries
-    res = run_queries(db, records_np, 5, 10)
+    res = run_queries(db, records_np, 5, 1)
 
     print(f"restul for 20M records")
     print(eval(res))

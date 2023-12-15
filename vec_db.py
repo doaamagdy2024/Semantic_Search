@@ -46,9 +46,10 @@ class VecDB:
     def __init__(self, file_path = "10K", new_db = True) -> None:
         
         # hyperparameters
-        self.num_vectors_per_cluster = 200
+        self.num_vectors_per_cluster = 300
         self.centroids = []
         self.kmeans = None
+        self.num_centroids = 0
         # we will store the clusters in files
         # each file will have a centroid id
         # and the vectors that belong to that centroid
@@ -79,7 +80,7 @@ class VecDB:
         # now we need to find the n closest centroids to the query
         # we will use the kmeans model to find the closest centroids
         # gen n centroids where n is a hyperparameter
-        n = 5 # number of nearest centroids to get
+        n = 20 # number of nearest centroids to get
         ###########################################################################
         # load the kmeans model from the pickle file
         with open(f"{self.file_path}/old_kmeans.pickle", "rb") as fin:
@@ -132,6 +133,45 @@ class VecDB:
         return ids_scores
 
 
+    def _retrive_directly(self, query: Annotated[List[float], 70], top_k = 5):
+        n = 167
+        
+        nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid))[:n]
+        # # now we need to get the label of each centroid
+        nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
+        print("nearest_centroids_directly", nearest_centroids)
+
+        # now we need to search in the files of the nearest centroids
+        # we will get the top k vectors from each file
+        heap = []
+        heapq.heapify(heap)
+        for centroid in nearest_centroids:
+            # open the file of the centroid
+            f = open(f"{self.file_path}/cluster_{centroid}.csv", "r")
+            # read the file line by line
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+                # split the line to get the id and the vector
+                # the first number will be the id
+                # the rest of the numbers will be the vector
+                id = int(line.split(",")[0])
+                vect = [float(e) for e in line.split(",")[1:]]
+                # calculate the score of the vector
+                score = self._cal_score(query, vect)
+                # add it to the heap
+                heapq.heappush(heap, (-score, id, vect))
+            f.close()
+        # now we have the top k vectors in the heap
+        # we will pop them from the heap and return them
+        ids_scores = []
+        for _ in range(top_k):
+            score, id, vect = heapq.heappop(heap)
+            ids_scores.append(id)
+
+        return ids_scores
+
     def _cal_score(self, vec1, vec2):
         dot_product = np.dot(vec1, vec2)
         norm_vec1 = np.linalg.norm(vec1)
@@ -170,10 +210,12 @@ class VecDB:
         
         num_centroids = ceil(n_vectors_train / self.num_vectors_per_cluster)
 
+        self.num_centroids = num_centroids
+
         print("n_vectors_train", n_vectors_train)
         print("num_centroids", num_centroids)
 
-        self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors[:n_vectors_train]]) 
+        self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors]) 
         
         #self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors])
         
@@ -182,7 +224,7 @@ class VecDB:
         self.centroids = self.kmeans.cluster_centers_
         clusters = {}
         
-        print("self.centroids", self.centroids)
+        # print("self.centroids", self.centroids)
         # we can find the closest centroid by fit function
         for vec in db_vectors:
             centroid = self.kmeans.predict([vec.vect])[0]
