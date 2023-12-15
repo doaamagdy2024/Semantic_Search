@@ -61,7 +61,7 @@ class VecDB:
                 for file in os.listdir(self.file_path):
                     os.remove(f"{self.file_path}/{file}")
     
-    def insert_records(self, rows: List[Dict[int, Annotated[List[float], 70]]]): # anonoated is a type hint means that the list has 70 elements of type float
+    def insert_records(self, rows: List[Dict[int, Annotated[List[float], 70]]], src, dest, new_db = True): # anonoated is a type hint means that the list has 70 elements of type float
         # create a list to store all the vectors
         db_vectors = []
         with open(f"{self.file_path}/old_db.csv", "w") as fout:
@@ -72,7 +72,7 @@ class VecDB:
                 v = vector(id, embed)
                 db_vectors.append(v)
         # build index
-        self._build_index(db_vectors)
+        self._build_index(db_vectors, src, dest, new_db)
 
     # TODO: change this function to retreive from the indexed Inverted file index db
     def retrive(self, query: Annotated[List[float], 70], top_k = 5):
@@ -142,7 +142,7 @@ class VecDB:
     
 
 
-    def _build_index(self, db_vectors):
+    def _build_index(self, db_vectors, src, dest, new_db = True):
         # now let's create the centroids on part of the vectors only to speed up the process
 
         # number of vectors to use to create the centroids
