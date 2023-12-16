@@ -28,13 +28,17 @@ def run_queries(db, np_rows, top_k, num_runs):
         query = rng.random((1, 70), dtype=np.float32)
         
         tic = time.time()
-        db_ids = db._retrive_directly(query, top_k)
+        db_ids = db.retrive(query, top_k)
         toc = time.time()
         run_time = toc - tic
         
         tic = time.time()
         actual_ids = np.argsort(np_rows.dot(query.T).T / (np.linalg.norm(np_rows, axis=1) * np.linalg.norm(query)), axis= 1).squeeze().tolist()[::-1]
         toc = time.time()
+        # calculate the recall
+        # recall = len(set(db_ids).intersection(set(actual_ids))) / len(set(actual_ids))
+        # print("recall = ", recall)
+
         np_run_time = toc - tic
         
         results.append(Result(run_time, top_k, db_ids, actual_ids))
@@ -44,6 +48,7 @@ def eval(results: List[Result]):
     # scores are negative. So getting 0 is the best score.
     scores = []
     run_time = []
+    count_true = 0
     for res in results:
         run_time.append(res.run_time)
         # case for retireving number not equal to top_k, socre will be the lowest
@@ -56,9 +61,12 @@ def eval(results: List[Result]):
                 ind = res.actual_ids.index(id)
                 if ind > res.top_k * 3:
                     score -= ind
+                else:
+                    count_true += 1
             except:
                 score -= len(res.actual_ids)
         scores.append(score)
+    print("count_true = ", count_true)
 
     return sum(scores) / len(scores), sum(run_time) / len(run_time)
 
@@ -71,40 +79,40 @@ if __name__ == "__main__":
     new_db = True
 
     # create an obj from class db
-    db = VecDB(new_db=new_db, file_path="100K")
+    db = VecDB(new_db=new_db, file_path="5M")
 
     # first insert the first 100K records ----------------------------------------------------------------
-    print("inserting 100K records---------------------------------------------------------------")
-    records_dict = [{"id": i, "embed": list(row)} for i, row in enumerate(records_np[:100000])]
-    db.insert_records(records_dict, src = "100K", dest = "100K", new_db= new_db)
-    new_db = False
+    # print("inserting 100K records---------------------------------------------------------------")
+    # records_dict = [{"id": i, "embed": list(row)} for i, row in enumerate(records_np[:100000])]
+    # db.insert_records(records_dict, True, src = "100K", dest = "100K", new_db= new_db)
+    # new_db = False
 
-    # now run the queries
-    res = run_queries(db, records_np[:100000], 5, 1)
+    # # now run the queries
+    # res = run_queries(db, records_np[:100000], 5, 1)
 
-    print("restul for 100K records")
-    print(eval(res))
+    # print("restul for 100K records")
+    # print(eval(res))
 
     # now insert up to 1M records ----------------------------------------------------------------------
     # so we need to insert 900K records
-    print("inserting 1M records---------------------------------------------------------------")
-    records_dict = [{"id": i + 100000, "embed": list(row)} for i, row in enumerate(records_np[100000:1000000])]
-    db.insert_records(records_dict, new_db=new_db, src= "100K", dest="1M")
+    #print("inserting 1M records---------------------------------------------------------------")
+    records_dict = [{"id": i, "embed": list(row)} for i, row in enumerate(records_np[0:1000000])]
+    db.insert_records(records_dict, True, new_db=True, src= "100K", dest="1M")
 
     # now run the queries
-    res = run_queries(db, records_np[0:1000000], 5, 1)
+    # res = run_queries(db, records_np[0:1000000], 5, 1)
 
-    print("restul for 1M records")
-    print(eval(res))
+    # print("restul for 1M records")
+    # print(eval(res))
 
     # now insert up to 5M records ----------------------------------------------------------------------
     # so we need to insert 4M records
     # insert them million by million
     print("inserting 5M records---------------------------------------------------------------")
-    for i in range(4):
-        records_dict = [{"id": i + 1000000 + 1000000 * i, "embed": list(row)} for i, row in enumerate(records_np[1000000 * i:1000000 * (i + 1)])]
-        db.insert_records(records_dict, new_db=new_db, src= "1M", dest="5M")
-
+    for j in range(4):
+        records_dict = [{"id": i + 1000000 + 1000000 * j, "embed": list(row)} for i, row in enumerate(records_np[1000000 * j:1000000 * (j + 1)])]
+        db.insert_records(records_dict, j == 0, new_db=False, src= "1M", dest="5M")
+        
     # now run the queries
     res = run_queries(db, records_np[0:5*10**6], 5, 1)
 
@@ -115,9 +123,10 @@ if __name__ == "__main__":
     # so we need to insert 5M records
     # insert them million by million
     print("inserting 10M records---------------------------------------------------------------")
-    for i in range(5):
-        records_dict = [{"id": i + 5000000 + 1000000 * i, "embed": list(row)} for i, row in enumerate(records_np[1000000 * i:1000000 * (i + 1)])]
-        db.insert_records(records_dict, new_db=new_db, src= "5M", dest="10M")
+    for j in range(5):
+        records_dict = [{"id": i + 5000000 + 1000000 * j, "embed": list(row)} for i, row in enumerate(records_np[1000000 * j:1000000 * (j + 1)])]
+        db.insert_records(records_dict, j == 0, new_db=False, src= "5M", dest="10M")
+        
 
     # now run the queries
     res = run_queries(db, records_np[0:10*10**6], 5, 1)
@@ -129,10 +138,10 @@ if __name__ == "__main__":
     # so we need to insert 5M records
     # isnert them million by million
     print("inserting 15M records---------------------------------------------------------------")
-    for i in range(5): 
-        records_dict = [{"id": i + 10000000 + 1000000 * i, "embed": list(row)} for i, row in enumerate(records_np[1000000 * i:1000000 * (i + 1)])]
-        db.insert_records(records_dict, new_db=new_db, src= "10M", dest="15M")
-
+    for j in range(5): 
+        records_dict = [{"id": i + 10000000 + 1000000 * j, "embed": list(row)} for i, row in enumerate(records_np[1000000 * j:1000000 * (j + 1)])]
+        db.insert_records(records_dict, j == 0, new_db=False, src= "10M", dest="15M")
+        
     # now run the queries
     res = run_queries(db, records_np[0:15*10**6], 5, 1)
 
@@ -143,10 +152,10 @@ if __name__ == "__main__":
     # so we need to insert 5M records
     # insert them million by million
     print("inserting 20M records---------------------------------------------------------------")
-    for i in range(5):
-        records_dict = [{"id": i + 15000000 + 1000000 * i, "embed": list(row)} for i, row in enumerate(records_np[1000000 * i:1000000 * (i + 1)])]
-        db.insert_records(records_dict, new_db=new_db, src= "15M", dest="20M")
-
+    for j in range(5):
+        records_dict = [{"id": i + 15000000 + 1000000 * j, "embed": list(row)} for i, row in enumerate(records_np[1000000 * j:1000000 * (j + 1)])]
+        db.insert_records(records_dict, j == 0, new_db=False, src= "15M", dest="20M")
+        
     # now run the queries
     res = run_queries(db, records_np[0:20*10**6], 5, 1)
 
