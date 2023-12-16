@@ -103,7 +103,7 @@ class VecDB:
     # TODO: change this function to retreive from the indexed Inverted file index db
     def retrive(self, query: Annotated[List[float], 70], top_k = 5):
         if self.dest == "":
-            n = 5
+            n = 15
         elif self.dest == "10K":
             n = 15
         elif self.dest == "100K":
