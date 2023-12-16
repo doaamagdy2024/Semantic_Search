@@ -7,6 +7,7 @@ from sklearn.cluster import KMeans
 import heapq
 import pickle
 import os
+import faiss
 import sys
 import collections
 
@@ -53,6 +54,7 @@ class VecDB:
         self.centroids = []
         self.kmeans = None
         self.num_centroids = 0
+        self.index_hnsw = faiss.IndexHNSWFlat(70, 32)
         self.dest = ""
         # we will store the clusters in files
         # each file will have a centroid id
@@ -66,6 +68,13 @@ class VecDB:
                 for file in os.listdir(self.file_path):
                     os.remove(f"{self.file_path}/{file}")
         else:
+            # load the centroids from the csv file to self.centroids
+            with open(f"{self.file_path}/old_centroids.csv", "r") as fin:
+                for line in fin:
+                    self.centroids.append([float(e) for e in line.split(",")])
+            # add the centroids to the index
+            self.index_hnsw.add(np.array(self.centroids).astype('float32'))
+            
             # load the kmeans model from the pickle file
             with open(f"{self.file_path}/old_kmeans.pickle", "rb") as fin:
                 self.kmeans = pickle.load(fin)
@@ -105,10 +114,13 @@ class VecDB:
         # with open(f"{self.file_path}/old_kmeans.pickle", "rb") as fin:
         #     self.kmeans = pickle.load(fin)
         ###########################################################################
-        
-        nearest_centroids = sorted(self.kmeans.cluster_centers_, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
-        # # now we need to get the label of each centroid
-        nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
+        # get the nearest centroids using faiss index
+        query = np.array(query).reshape(1, -1)
+        _, nearest_centroids = self.index_hnsw.search(query, n)
+        nearest_centroids = nearest_centroids[0]
+        # nearest_centroids = sorted(self.kmeans.cluster_centers_, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
+        # # # now we need to get the label of each centroid
+        # nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
         #print("nearest_centroids_kmeans", nearest_centroids)
 
         # now we need to search in the files of the nearest centroids
@@ -156,13 +168,13 @@ class VecDB:
         if self.dest == "":
             n = 5
         elif self.dest == "10K":
-            n = 10
+            n = 5
         elif self.dest == "100K":
-            n = 20
+            n = 5
         elif self.dest == "1M":
-            n = 100
+            n = 10
         else:
-            n = 150
+            n = 10
         # print("self.dest", self.dest)
         # print("n", n)
         # as numy float is c double we need to convert it to python float
@@ -172,11 +184,13 @@ class VecDB:
         #query = np.array(query).reshape(1, -1)
         # nearest_one = self.kmeans.predict(query)[0]
         # print("nearest_one------------------------", nearest_one)
-        
-        nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
-        # # now we need to get the label of each centroid
-        #print("----------------------------------------")
-        nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
+        # use faiss to get the nearest centroids
+        _, nearest_centroids = self.index_hnsw.search(np.array(query).reshape(1, -1), n)
+        nearest_centroids = nearest_centroids[0]
+        # nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
+        # # # now we need to get the label of each centroid
+        # #print("----------------------------------------")
+        # nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
         #print("nearest_centroids_directly", nearest_centroids)
 
         # now we need to search in the files of the nearest centroids
@@ -398,7 +412,7 @@ class VecDB:
         # number of vectors to use to create the centroids
         n_vectors_train = ceil(len(db_vectors) * 0.5)
         
-        num_centroids = 300 #ceil(n_vectors_train / self.num_vectors_per_cluster)
+        num_centroids = 40 #ceil(n_vectors_train / self.num_vectors_per_cluster)
 
         self.num_centroids = num_centroids
 
@@ -440,5 +454,8 @@ class VecDB:
         # save the kmeans model to a pickle file
         with open(f"{self.file_path}/old_kmeans.pickle", "wb") as fout:
             pickle.dump(self.kmeans, fout)
-            
+        
+        # add the centroids to the index
+        self.index_hnsw.add(np.array(self.centroids).astype('float32'))
+                   
         #print("Done building index")
