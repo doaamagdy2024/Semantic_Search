@@ -111,7 +111,7 @@ if __name__ == "__main__":
     print("inserting 5M records---------------------------------------------------------------")
     for j in range(4):
         records_dict = [{"id": i + 1000000 + 1000000 * j, "embed": list(row)} for i, row in enumerate(records_np[1000000 * j:1000000 * (j + 1)])]
-        db.insert_records(records_dict, j == 0, new_db=False, src= "1M", dest="5M")
+        db.insert_records(records_dict, first_batch=False, new_db=False, src= "1M", dest="5M")
         
     # now run the queries
     res = run_queries(db, records_np[0:5*10**6], 5, 1)

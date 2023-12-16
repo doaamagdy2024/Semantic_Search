@@ -105,7 +105,7 @@ class VecDB:
         if self.dest == "":
             n = 5
         elif self.dest == "10K":
-            n = 5
+            n = 15
         elif self.dest == "100K":
             n = 20
         elif self.dest == "1M":
