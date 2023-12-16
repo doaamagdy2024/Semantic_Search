@@ -112,23 +112,7 @@ class VecDB:
             n = 20
         else:
             n = 30
-
-        if self.dest == "10K":
-            ram_size_limit = 5 * 1024 * 1024 # 5 MB
-        elif self.dest == "100K":
-            ram_size_limit = 10 * 1024 * 1024
-        elif self.dest == "1M":
-            ram_size_limit = 25 * 1024 * 1024 # 25 MB
-        elif self.dest == "5M":
-            ram_size_limit = 75 * 1024 * 1024 # 75 MB
-        elif self.dest == "10M":
-            ram_size_limit = 150 * 1024 * 1024 # 150 MB
-        elif self.dest == "15M":
-            ram_size_limit = 225 * 1024 * 1024 # 225 MB
-        elif self.dest == "20M":
-            ram_size_limit = 300 * 1024 * 1024 # 300 MB
-        else:
-            ram_size_limit = 5 * 1024 * 1024
+            
         # print("self.dest", self.dest)
         # print("n", n)
         # as numy float is c double we need to convert it to python float
@@ -169,7 +153,6 @@ class VecDB:
 
                 # add it to the heap
                 heapq.heappush(heap, (-score, id, vect))
-                
                 #heapq.heappush(all_scores, (score, id))
             f.close()
         # now we have the top k vectors in the heap
