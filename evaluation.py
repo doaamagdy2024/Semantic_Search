@@ -99,7 +99,7 @@ if __name__ == "__main__":
     records_dict = [{"id": i, "embed": list(row)} for i, row in enumerate(records_np[0:1000000])]
     db.insert_records(records_dict, True, new_db=True, src= "100K", dest="1M")
 
-    # now run the queries
+    # now run the queries  
     # res = run_queries(db, records_np[0:1000000], 5, 1)
 
     # print("restul for 1M records")

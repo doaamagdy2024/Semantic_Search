@@ -86,7 +86,7 @@ class VecDB:
             # with open(f"{self.file_path}/old_kmeans.pickle", "rb") as fin:
             #     self.kmeans = pickle.load(fin)
 
-    def insert_records(self, rows: List[Dict[int, Annotated[List[float], 70]]], first_batch, src = "", dest = "", new_db = True): # anonoated is a type hint means that the list has 70 elements of type float
+    def insert_records(self, rows: List[Dict[int, Annotated[List[float], 70]]], first_batch = False, src = "", dest = "", new_db = True): # anonoated is a type hint means that the list has 70 elements of type float
         # create a list to store all the vectors
         db_vectors = []
         with open(f"{self.file_path}/old_db.csv", "w") as fout:
