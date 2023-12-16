@@ -101,7 +101,7 @@ class VecDB:
         self._build_index(db_vectors, first_batch, src, dest, new_db)
 
     # TODO: change this function to retreive from the indexed Inverted file index db
-    def retrive(self, query: Annotated[List[float], 70], top_k = 5):
+    def retrive__(self, query: Annotated[List[float], 70], top_k = 5):
         if self.dest == "":
             n = 15
         elif self.dest == "10K":
@@ -269,7 +269,84 @@ class VecDB:
 
 
 
+    def retrive(self, query: Annotated[List[float], 70], top_k = 5):
+        if self.dest == "":
+            n = 15
+        elif self.dest == "10K":
+            n = 15
+        elif self.dest == "100K":
+            n = 20
+        elif self.dest == "1M":
+            n = 20
+        else:
+            n = 7
 
+        # For 100 K --> 10 MB
+        # For 1 M --> 25 MB
+        # For 5 M --> 75 MB
+        # For 10 M --> 150 MB
+        # For 15 M --> 225 MB
+        # For 20 M --> 300 MB
+
+        if self.dest == "10K":
+            ram_size_limit = 5 * 1024 * 1024 # 5 MB
+        elif self.dest == "100K":
+            ram_size_limit = 10 * 1024 * 1024
+        elif self.dest == "1M":
+            ram_size_limit = 25 * 1024 * 1024 # 25 MB
+        elif self.dest == "5M":
+            ram_size_limit = 75 * 1024 * 1024 # 75 MB
+        elif self.dest == "10M":
+            ram_size_limit = 150 * 1024 * 1024 # 150 MB
+        elif self.dest == "15M":
+            ram_size_limit = 225 * 1024 * 1024 # 225 MB
+        elif self.dest == "20M":
+            ram_size_limit = 300 * 1024 * 1024 # 300 MB
+        else:
+            ram_size_limit = 5 * 1024 * 1024
+
+
+        query = list(query)
+
+        nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
+        # now we need to get the label of each centroid
+        nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
+
+
+        q = collections.deque()
+        for centroid in nearest_centroids:
+            # open the file of the centroid
+            f = open(f"{self.file_path}/cluster_{centroid}.csv", "r")
+            # read the file line by line
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+                # split the line to get the id and the vector
+                # the first number will be the id
+                # the rest of the numbers will be the vector
+                id = int(line.split(",")[0])
+                vect = [float(e) for e in line.split(",")[1:]]
+                # calculate the score of the vector
+                score = self._cal_score(query, vect)
+                q.append((-score, id, vect))
+                # we want to limit the size of the ram usage so we will pop the smallest element from the queue
+                if sys.getsizeof(q) + sys.getsizeof(nearest_centroids) >= ram_size_limit:
+                    q.popleft()
+
+
+            f.close()
+
+
+
+        # now we have the top k vectors in the heap
+        # we will pop them from the heap and return them
+        ids_scores = []
+        for _ in range(top_k):
+            score, id, vect = q.popleft()
+            ids_scores.append(id)
+
+        return ids_scores
 
 
 
@@ -415,82 +492,5 @@ class VecDB:
         return ids_scores
 
 
-    def _retrive_directly_3(self, query: Annotated[List[float], 70], top_k = 5):
-        if self.dest == "":
-            n = 5
-        elif self.dest == "10K":
-            n = 7
-        elif self.dest == "100K":
-            n = 60
-        elif self.dest == "1M":
-            n = 100
-        else:
-            n = 300
-
-        # For 100 K --> 10 MB
-        # For 1 M --> 25 MB
-        # For 5 M --> 75 MB
-        # For 10 M --> 150 MB
-        # For 15 M --> 225 MB
-        # For 20 M --> 300 MB
-
-        if self.dest == "10K":
-            ram_size_limit = 5 * 1024 * 1024 # 5 MB
-        elif self.dest == "100K":
-            ram_size_limit = 10 * 1024 * 1024
-        elif self.dest == "1M":
-            ram_size_limit = 25 * 1024 * 1024 # 25 MB
-        elif self.dest == "5M":
-            ram_size_limit = 75 * 1024 * 1024 # 75 MB
-        elif self.dest == "10M":
-            ram_size_limit = 150 * 1024 * 1024 # 150 MB
-        elif self.dest == "15M":
-            ram_size_limit = 225 * 1024 * 1024 # 225 MB
-        elif self.dest == "20M":
-            ram_size_limit = 300 * 1024 * 1024 # 300 MB
-        else:
-            ram_size_limit = 5 * 1024 * 1024
-
-
-        query = list(query)
-
-        nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
-        # now we need to get the label of each centroid
-        nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
-
-
-        q = collections.deque()
-        for centroid in nearest_centroids:
-            # open the file of the centroid
-            f = open(f"{self.file_path}/cluster_{centroid}.csv", "r")
-            # read the file line by line
-            while True:
-                line = f.readline()
-                if not line:
-                    break
-                # split the line to get the id and the vector
-                # the first number will be the id
-                # the rest of the numbers will be the vector
-                id = int(line.split(",")[0])
-                vect = [float(e) for e in line.split(",")[1:]]
-                # calculate the score of the vector
-                score = self._cal_score(query, vect)
-                q.append((-score, id, vect))
-                # we want to limit the size of the ram usage so we will pop the smallest element from the queue
-                if sys.getsizeof(q) + sys.getsizeof(nearest_centroids) >= ram_size_limit:
-                    q.popleft()
-
-
-            f.close()
-
-
-
-        # now we have the top k vectors in the heap
-        # we will pop them from the heap and return them
-        ids_scores = []
-        for _ in range(top_k):
-            score, id, vect = q.popleft()
-            ids_scores.append(id)
-
-        return ids_scores
+    
 
