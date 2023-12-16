@@ -79,7 +79,7 @@ class VecDB:
             with open(f"{self.file_path}/old_kmeans.pickle", "rb") as fin:
                 self.kmeans = pickle.load(fin)
     
-    def insert_records(self, rows: List[Dict[int, Annotated[List[float], 70]]], src, dest, new_db = True): # anonoated is a type hint means that the list has 70 elements of type float
+    def insert_records(self, rows: List[Dict[int, Annotated[List[float], 70]]], src = "", dest = "", new_db = True): # anonoated is a type hint means that the list has 70 elements of type float
         # create a list to store all the vectors
         db_vectors = []
         with open(f"{self.file_path}/old_db.csv", "w") as fout:
@@ -170,9 +170,9 @@ class VecDB:
         elif self.dest == "10K":
             n = 5
         elif self.dest == "100K":
-            n = 5
+            n = 2
         elif self.dest == "1M":
-            n = 10
+            n = 5
         else:
             n = 10
         # print("self.dest", self.dest)
@@ -412,7 +412,7 @@ class VecDB:
         # number of vectors to use to create the centroids
         n_vectors_train = ceil(len(db_vectors) * 0.5)
         
-        num_centroids = 40 #ceil(n_vectors_train / self.num_vectors_per_cluster)
+        num_centroids = 20 #ceil(n_vectors_train / self.num_vectors_per_cluster)
 
         self.num_centroids = num_centroids
 
