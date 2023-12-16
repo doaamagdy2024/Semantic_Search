@@ -111,7 +111,7 @@ class VecDB:
         elif self.dest == "1M":
             n = 20
         else:
-            n = 30
+            n = 7
             
         # print("self.dest", self.dest)
         # print("n", n)
@@ -215,7 +215,7 @@ class VecDB:
         # number of vectors to use to create the centroids
         n_vectors_train = ceil(len(db_vectors) * 0.5)
 
-        num_centroids = 200 #ceil(n_vectors_train / self.num_vectors_per_cluster)
+        num_centroids = 300 #ceil(n_vectors_train / self.num_vectors_per_cluster)
 
         self.num_centroids = num_centroids
 
@@ -226,7 +226,7 @@ class VecDB:
         # for vec in db_vectors:
         #     vec.vect = vec.vect / np.linalg.norm(vec.vect)
 
-        self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors[0:100000]])
+        self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors[0:300000]])
 
         #self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors])
 

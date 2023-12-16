@@ -72,17 +72,17 @@ def eval(results: List[Result]):
 
 
 if __name__ == "__main__":
-    num_records = 10**7*2
+    #num_records = 10**7*2
     rng = np.random.default_rng(DB_SEED_NUMBER)
     #records_np = rng.random((num_records, 70), dtype=np.float32)
 
     new_db = True
 
-    # create an obj from class db
-    db = VecDB(new_db=new_db, file_path="5M")
+    # # create an obj from class db
+    db = VecDB(new_db=new_db, file_path="10M")
 
     len_db = 0
-    for x in range(5):
+    for x in range(10):
         records_np = rng.random((10**6, 70), dtype=np.float32)
         recrods_dict = [{"id": i + len_db, "embed": list(row)} for i, row in enumerate(records_np)]
         len_db += len(records_np)
@@ -90,10 +90,14 @@ if __name__ == "__main__":
         db.insert_records(recrods_dict, first_batch=x == 0, new_db=new_db, src= "0", dest="5M")
         new_db = False
 
+
+    # db = VecDB(new_db=False, file_path="5M")
     # now run the queries
-    records_np = rng.random((5*10**6, 70), dtype=np.float32)
+    records_np = rng.random((10*10**6, 70), dtype=np.float32)
     res = run_queries(db, records_np, 5, 1)
 
+    print("restul for 10M records")
+    print(eval(res))
 
 
 
