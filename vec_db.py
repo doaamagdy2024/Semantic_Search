@@ -214,7 +214,7 @@ class VecDB:
         # number of vectors to use to create the centroids
         n_vectors_train = ceil(len(db_vectors) * 0.5)
 
-        num_centroids = 250 #ceil(n_vectors_train / self.num_vectors_per_cluster)
+        num_centroids = 200 #ceil(n_vectors_train / self.num_vectors_per_cluster)
 
         self.num_centroids = num_centroids
 
@@ -225,7 +225,7 @@ class VecDB:
         # for vec in db_vectors:
         #     vec.vect = vec.vect / np.linalg.norm(vec.vect)
 
-        self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors[0:300000]])
+        self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors[0:100000]])
 
         #self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors])
 
@@ -250,11 +250,11 @@ class VecDB:
                     fout.write(f"{row_str}\n")
 
         ##################################################################################
-        # store the centroids in a csv file
-        with open("test/old_centroids.csv", "w") as fout:
-            for centroid in self.centroids:
-                row_str = ",".join([str(e) for e in centroid])
-                fout.write(f"{row_str}\n")
+        # # store the centroids in a csv file
+        # with open("test/old_centroids.csv", "w") as fout:
+        #     for centroid in self.centroids:
+        #         row_str = ",".join([str(e) for e in centroid])
+        #         fout.write(f"{row_str}\n")
 
         ##################################################################################
         # save the kmeans model to a pickle file
