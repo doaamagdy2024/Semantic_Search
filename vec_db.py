@@ -7,7 +7,7 @@ from sklearn.cluster import KMeans
 import heapq
 import pickle
 import os
-import faiss
+#import faiss
 import sys
 import collections
 
@@ -57,7 +57,7 @@ class VecDB:
         self.centroids = []
         self.kmeans = None
         self.num_centroids = 0
-        self.index_hnsw = faiss.IndexHNSWFlat(70, 32)
+        #self.index_hnsw = faiss.IndexHNSWFlat(70, 32)
         self.dest = ""
         # we will store the clusters in files
         # each file will have a centroid id
@@ -262,7 +262,7 @@ class VecDB:
             pickle.dump(self.kmeans, fout)
 
         # add the centroids to the index
-        self.index_hnsw.add(np.array(self.centroids).astype('float32'))
+        # self.index_hnsw.add(np.array(self.centroids).astype('float32'))
 
         #print("Done building index")
 
@@ -483,11 +483,12 @@ class VecDB:
             f.close()
 
 
+
         # now we have the top k vectors in the heap
         # we will pop them from the heap and return them
         ids_scores = []
         for _ in range(top_k):
-            score, id, vect = heapq.heappop(heap)
+            score, id, vect = q.popleft()
             ids_scores.append(id)
 
         return ids_scores
