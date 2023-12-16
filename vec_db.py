@@ -101,6 +101,191 @@ class VecDB:
         self._build_index(db_vectors, first_batch, src, dest, new_db)
 
     # TODO: change this function to retreive from the indexed Inverted file index db
+    def retrive(self, query: Annotated[List[float], 70], top_k = 5):
+        if self.dest == "":
+            n = 5
+        elif self.dest == "10K":
+            n = 5
+        elif self.dest == "100K":
+            n = 20
+        elif self.dest == "1M":
+            n = 20
+        else:
+            n = 30
+        # print("self.dest", self.dest)
+        # print("n", n)
+        # as numy float is c double we need to convert it to python float
+        query = list(query)
+        #print("query", query)
+        
+        #query = np.array(query).reshape(1, -1)
+        # nearest_one = self.kmeans.predict(query)[0]
+        # print("nearest_one------------------------", nearest_one)
+        
+        nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
+        # # now we need to get the label of each centroid
+        #print("----------------------------------------")
+        nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
+        #print("nearest_centroids_directly", nearest_centroids)
+
+        # now we need to search in the files of the nearest centroids
+        # we will get the top k vectors from each file
+        heap = []
+        heapq.heapify(heap)
+        # all_scores = []
+        # heapq.heapify(all_scores)
+        for centroid in nearest_centroids:
+            # open the file of the centroid
+            f = open(f"{self.file_path}/cluster_{centroid}.csv", "r")
+            # read the file line by line
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+                # split the line to get the id and the vector
+                # the first number will be the id
+                # the rest of the numbers will be the vector
+                id = int(line.split(",")[0])
+                vect = [float(e) for e in line.split(",")[1:]] # [1:] to remove the id
+                # calculate the score of the vector
+                score = self._cal_score(query, vect)
+
+                # add it to the heap
+                heapq.heappush(heap, (-score, id, vect))
+                #heapq.heappush(all_scores, (score, id))
+            f.close()
+        # now we have the top k vectors in the heap
+        # we will pop them from the heap and return them
+        ids_scores = []
+        for _ in range(top_k):
+            score, id, vect = heapq.heappop(heap)
+            ids_scores.append(id)
+        
+        
+        # # now write all the scores in a file 
+        # f = open("scores.csv", "w")
+        # while True:
+        #     score, id = heapq.heappop(all_scores)
+        #     f.write(f"{id},{score}\n")
+        #     if not all_scores:
+        #         break       
+
+        return ids_scores
+
+
+    def _cal_score(self, vec1, vec2):
+        dot_product = np.dot(vec1, vec2)
+        norm_vec1 = np.linalg.norm(vec1)
+        norm_vec2 = np.linalg.norm(vec2)
+        cosine_similarity = dot_product / (norm_vec1 * norm_vec2)
+        return cosine_similarity
+
+
+    def build_part_of_db(self, db_vectors, first_batch, src, dest):
+        # first copy the files of the clusters from the old db
+        if first_batch:
+            copy_files(src, dest)
+        # now we have the centorids and the clusters
+        # we need to assign each vector to the closest centroid
+        # we will use the kmeans model to find the closest centroid of each vector
+        # then insert this vector to the file of this centroid
+        self.dest = dest
+
+        for vec in db_vectors:
+            # normalize the vector
+            #vec.vect = vec.vect / np.linalg.norm(vec.vect) 
+            centroid = self.kmeans.predict([vec.vect])[0]
+            # now we have the centroid
+            # we need to insert this vector to the file of this centroid
+            with open(f"{dest}/cluster_{centroid}.csv", "a") as fout:
+                row_str = f"{vec.id}," + ",".join([str(e) for e in vec.vect])
+                fout.write(f"{row_str}\n")
+
+        #print("Done building part of db")
+
+
+    def _build_index(self, db_vectors, first_batch = True, src = "", dest = "", new_db = True):
+        self.dest = dest
+        # now let's create the centroids on part of the vectors only to speed up the process
+        if new_db == False:
+            self.build_part_of_db(db_vectors, first_batch, src, dest)
+            return
+
+        # number of vectors to use to create the centroids
+        n_vectors_train = ceil(len(db_vectors) * 0.5)
+
+        num_centroids = 250 #ceil(n_vectors_train / self.num_vectors_per_cluster)
+
+        self.num_centroids = num_centroids
+
+        # print("n_vectors_train", n_vectors_train)
+        # print("num_centroids", num_centroids)
+
+        # normalize the vectors
+        # for vec in db_vectors:
+        #     vec.vect = vec.vect / np.linalg.norm(vec.vect)
+
+        self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors[0:300000]])
+
+        #self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors])
+
+        # now Kmeans has the centroids
+        # now we need to assign each vector to the closest centroid
+        self.centroids = self.kmeans.cluster_centers_
+        clusters = {}
+
+        # print("self.centroids", self.centroids)
+        # we can find the closest centroid by fit function
+        for vec in db_vectors:
+            centroid = self.kmeans.predict([vec.vect])[0]
+            clusters[centroid] = clusters.get(centroid, []) + [vec]
+
+        # now store each cluster in a file
+        # create a file for each centroid
+        #print("Start storing index")
+        for centroid in clusters:
+            with open(f"{self.file_path}/cluster_{centroid}.csv", "w") as fout:
+                for vec in clusters[centroid]:
+                    row_str = f"{vec.id}," + ",".join([str(e) for e in vec.vect])
+                    fout.write(f"{row_str}\n")
+
+        ##################################################################################
+        # store the centroids in a csv file
+        with open("test/old_centroids.csv", "w") as fout:
+            for centroid in self.centroids:
+                row_str = ",".join([str(e) for e in centroid])
+                fout.write(f"{row_str}\n")
+
+        ##################################################################################
+        # save the kmeans model to a pickle file
+        with open(f"{self.file_path}/old_kmeans.pickle", "wb") as fout:
+            pickle.dump(self.kmeans, fout)
+
+        # add the centroids to the index
+        self.index_hnsw.add(np.array(self.centroids).astype('float32'))
+
+        #print("Done building index")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def retrive_(self, query: Annotated[List[float], 70], top_k = 5):
         if self.file_path == "":
             n = 5
@@ -169,81 +354,8 @@ class VecDB:
                 fout.write(f"{id}\n")
         #################################################
         return ids_scores
-
-
-    def retrive(self, query: Annotated[List[float], 70], top_k = 5):
-        if self.dest == "":
-            n = 5
-        elif self.dest == "10K":
-            n = 10
-        elif self.dest == "100K":
-            n = 20
-        elif self.dest == "1M":
-            n = 20
-        else:
-            n = 30
-        # print("self.dest", self.dest)
-        # print("n", n)
-        # as numy float is c double we need to convert it to python float
-        query = list(query)
-        #print("query", query)
-        
-        #query = np.array(query).reshape(1, -1)
-        # nearest_one = self.kmeans.predict(query)[0]
-        # print("nearest_one------------------------", nearest_one)
-        
-        nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
-        # # now we need to get the label of each centroid
-        #print("----------------------------------------")
-        nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
-        #print("nearest_centroids_directly", nearest_centroids)
-
-        # now we need to search in the files of the nearest centroids
-        # we will get the top k vectors from each file
-        heap = []
-        heapq.heapify(heap)
-        # all_scores = []
-        # heapq.heapify(all_scores)
-        for centroid in nearest_centroids:
-            # open the file of the centroid
-            f = open(f"{self.file_path}/cluster_{centroid}.csv", "r")
-            # read the file line by line
-            while True:
-                line = f.readline()
-                if not line:
-                    break
-                # split the line to get the id and the vector
-                # the first number will be the id
-                # the rest of the numbers will be the vector
-                id = int(line.split(",")[0])
-                vect = [float(e) for e in line.split(",")[1:]] # [1:] to remove the id
-                # calculate the score of the vector
-                score = self._cal_score(query, vect)
-
-                # add it to the heap
-                heapq.heappush(heap, (-score, id, vect))
-                #heapq.heappush(all_scores, (score, id))
-            f.close()
-        # now we have the top k vectors in the heap
-        # we will pop them from the heap and return them
-        ids_scores = []
-        for _ in range(top_k):
-            score, id, vect = heapq.heappop(heap)
-            ids_scores.append(id)
-        
-        
-        # # now write all the scores in a file 
-        # f = open("scores.csv", "w")
-        # while True:
-        #     score, id = heapq.heappop(all_scores)
-        #     f.write(f"{id},{score}\n")
-        #     if not all_scores:
-        #         break       
-
-        return ids_scores
-
-
-
+    
+    
     def _retrive_directly_2(self, query: Annotated[List[float], 70], top_k = 5):
         if self.dest == "":
             n = 5
@@ -380,95 +492,3 @@ class VecDB:
 
         return ids_scores
 
-    def _cal_score(self, vec1, vec2):
-        dot_product = np.dot(vec1, vec2)
-        norm_vec1 = np.linalg.norm(vec1)
-        norm_vec2 = np.linalg.norm(vec2)
-        cosine_similarity = dot_product / (norm_vec1 * norm_vec2)
-        return cosine_similarity
-
-
-    def build_part_of_db(self, db_vectors, first_batch, src, dest):
-        # first copy the files of the clusters from the old db
-        if first_batch:
-            copy_files(src, dest)
-        # now we have the centorids and the clusters
-        # we need to assign each vector to the closest centroid
-        # we will use the kmeans model to find the closest centroid of each vector
-        # then insert this vector to the file of this centroid
-        self.dest = dest
-
-        for vec in db_vectors:
-            # normalize the vector
-            #vec.vect = vec.vect / np.linalg.norm(vec.vect) 
-            centroid = self.kmeans.predict([vec.vect])[0]
-            # now we have the centroid
-            # we need to insert this vector to the file of this centroid
-            with open(f"{dest}/cluster_{centroid}.csv", "a") as fout:
-                row_str = f"{vec.id}," + ",".join([str(e) for e in vec.vect])
-                fout.write(f"{row_str}\n")
-
-        #print("Done building part of db")
-
-
-    def _build_index(self, db_vectors, first_batch = True, src = "", dest = "", new_db = True):
-        self.dest = dest
-        # now let's create the centroids on part of the vectors only to speed up the process
-        if new_db == False:
-            self.build_part_of_db(db_vectors, first_batch, src, dest)
-            return
-
-        # number of vectors to use to create the centroids
-        n_vectors_train = ceil(len(db_vectors) * 0.5)
-
-        num_centroids = 250 #ceil(n_vectors_train / self.num_vectors_per_cluster)
-
-        self.num_centroids = num_centroids
-
-        # print("n_vectors_train", n_vectors_train)
-        # print("num_centroids", num_centroids)
-
-        # normalize the vectors
-        # for vec in db_vectors:
-        #     vec.vect = vec.vect / np.linalg.norm(vec.vect)
-
-        self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors[0:300000]])
-
-        #self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors])
-
-        # now Kmeans has the centroids
-        # now we need to assign each vector to the closest centroid
-        self.centroids = self.kmeans.cluster_centers_
-        clusters = {}
-
-        # print("self.centroids", self.centroids)
-        # we can find the closest centroid by fit function
-        for vec in db_vectors:
-            centroid = self.kmeans.predict([vec.vect])[0]
-            clusters[centroid] = clusters.get(centroid, []) + [vec]
-
-        # now store each cluster in a file
-        # create a file for each centroid
-        #print("Start storing index")
-        for centroid in clusters:
-            with open(f"{self.file_path}/cluster_{centroid}.csv", "w") as fout:
-                for vec in clusters[centroid]:
-                    row_str = f"{vec.id}," + ",".join([str(e) for e in vec.vect])
-                    fout.write(f"{row_str}\n")
-
-        ##################################################################################
-        # store the centroids in a csv file
-        with open("test/old_centroids.csv", "w") as fout:
-            for centroid in self.centroids:
-                row_str = ",".join([str(e) for e in centroid])
-                fout.write(f"{row_str}\n")
-
-        ##################################################################################
-        # save the kmeans model to a pickle file
-        with open(f"{self.file_path}/old_kmeans.pickle", "wb") as fout:
-            pickle.dump(self.kmeans, fout)
-
-        # add the centroids to the index
-        self.index_hnsw.add(np.array(self.centroids).astype('float32'))
-
-        #print("Done building index")
