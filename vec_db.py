@@ -101,7 +101,7 @@ class VecDB:
         self._build_index(db_vectors, first_batch, src, dest, new_db)
 
     # TODO: change this function to retreive from the indexed Inverted file index db
-    def retrive__(self, query: Annotated[List[float], 70], top_k = 5):
+    def retrive(self, query: Annotated[List[float], 70], top_k = 5):
         if self.dest == "":
             n = 15
         elif self.dest == "10K":
@@ -269,7 +269,7 @@ class VecDB:
 
 
 
-    def retrive(self, query: Annotated[List[float], 70], top_k = 5):
+    def retrive_(self, query: Annotated[List[float], 70], top_k = 5):
         if self.dest == "":
             n = 15
         elif self.dest == "10K":
