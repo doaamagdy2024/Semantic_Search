@@ -35,6 +35,7 @@ def run_queries(db, np_rows, top_k, num_runs):
         tic = time.time()
         actual_ids = np.argsort(np_rows.dot(query.T).T / (np.linalg.norm(np_rows, axis=1) * np.linalg.norm(query)), axis= 1).squeeze().tolist()[::-1]
         toc = time.time()
+        print("actual_ids = ", actual_ids[:10])
         # calculate the recall
         # recall = len(set(db_ids).intersection(set(actual_ids))) / len(set(actual_ids))
         # print("recall = ", recall)
@@ -76,22 +77,22 @@ if __name__ == "__main__":
     rng = np.random.default_rng(DB_SEED_NUMBER)
     #records_np = rng.random((num_records, 70), dtype=np.float32)
 
-    new_db = True
+    # new_db = True
 
-    # # create an obj from class db
-    db = VecDB(new_db=new_db, file_path="10M")
+    # # # # create an obj from class db
+    # db = VecDB(new_db=new_db, file_path="10M")
 
-    len_db = 0
-    for x in range(10):
-        records_np = rng.random((10**6, 70), dtype=np.float32)
-        recrods_dict = [{"id": i + len_db, "embed": list(row)} for i, row in enumerate(records_np)]
-        len_db += len(records_np)
-        del records_np
-        db.insert_records(recrods_dict, first_batch=x == 0, new_db=new_db, src= "0", dest="5M")
-        new_db = False
+    # len_db = 0
+    # for x in range(10):
+    #     records_np = rng.random((10**6, 70), dtype=np.float32)
+    #     recrods_dict = [{"id": i + len_db, "embed": list(row)} for i, row in enumerate(records_np)]
+    #     len_db += len(records_np)
+    #     del records_np
+    #     db.insert_records(recrods_dict, first_batch=x == 0, new_db=new_db, src= "0", dest="10M")
+    #     new_db = False
 
 
-    # db = VecDB(new_db=False, file_path="5M")
+    db = VecDB(new_db=False, file_path="10M")
     # now run the queries
     records_np = rng.random((10*10**6, 70), dtype=np.float32)
     res = run_queries(db, records_np, 5, 1)

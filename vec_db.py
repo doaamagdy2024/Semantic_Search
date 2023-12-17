@@ -58,7 +58,7 @@ class VecDB:
         self.kmeans = None
         self.num_centroids = 0
         #self.index_hnsw = faiss.IndexHNSWFlat(70, 32)
-        self.dest = ""
+        self.dest = file_path
         # we will store the clusters in files
         # each file will have a centroid id
         # and the vectors that belong to that centroid
@@ -110,9 +110,19 @@ class VecDB:
             n = 20
         elif self.dest == "1M":
             n = 20
-        else:
+        elif self.dest == "5M":
             n = 7
-            
+        elif self.dest == "10M":
+            n = 9
+        elif self.dest == "15M":
+            n = 40
+        elif self.dest == "20m":
+            n = 50
+        else:
+            n = 50
+
+        print("n = ", n)
+
         # print("self.dest", self.dest)
         # print("n", n)
         # as numy float is c double we need to convert it to python float
@@ -170,7 +180,7 @@ class VecDB:
         #     f.write(f"{id},{score}\n")
         #     if not all_scores:
         #         break       
-
+        print("my ids", ids_scores)
         return ids_scores
 
 
