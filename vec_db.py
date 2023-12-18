@@ -10,6 +10,8 @@ import os
 #import faiss
 import sys
 import collections
+#from memory_profiler import memory_usage
+
 
 # in this file we will implement a better version of VecDB
 # we have to use better indexing method to speed up the retrival process
@@ -122,6 +124,32 @@ class VecDB:
             n = 50
 
         print("n = ", n)
+                # For 100 K --> 10 MB
+        # For 1 M --> 25 MB
+        # For 5 M --> 75 MB
+        # For 10 M --> 150 MB
+        # For 15 M --> 225 MB
+        # For 20 M --> 300 MB
+
+        if self.dest == "10K":
+            ram_size_limit = 5 * 1024 * 1024 # 5 MB
+        elif self.dest == "100K":
+            ram_size_limit = 10 * 1024 * 1024
+        elif self.dest == "1M":
+            ram_size_limit = 25 * 1024 * 1024 # 25 MB
+        elif self.dest == "5M":
+            ram_size_limit = 75 * 1024 * 1024 # 75 MB
+        elif self.dest == "10M":
+            ram_size_limit = 150 * 1024 * 1024 # 150 MB
+        elif self.dest == "15M":
+            ram_size_limit = 225 * 1024 * 1024 # 225 MB
+        elif self.dest == "20M":
+            ram_size_limit = 300 * 1024 * 1024 # 300 MB
+        else:
+            ram_size_limit = 5 * 1024 * 1024
+
+        # convert the ram_size_limit to GB
+        ram_size_limit = ram_size_limit / 1024
 
         # print("self.dest", self.dest)
         # print("n", n)
@@ -164,7 +192,12 @@ class VecDB:
                 # add it to the heap
                 heapq.heappush(heap, (-score, id, vect))
                 #heapq.heappush(all_scores, (score, id))
+                # getsizeof return the size in bytes
+                if sys.getsizeof(heap) + sys.getsizeof(nearest_centroids) >= ram_size_limit:
+                    #print("reduce the heap size --------------------------")
+                    heap = heap[:-len(heap)//2]
             f.close()
+            
         # now we have the top k vectors in the heap
         # we will pop them from the heap and return them
         ids_scores = []
@@ -283,13 +316,21 @@ class VecDB:
         if self.dest == "":
             n = 15
         elif self.dest == "10K":
-            n = 10
+            n = 15
         elif self.dest == "100K":
             n = 20
         elif self.dest == "1M":
             n = 20
-        else:
+        elif self.dest == "5M":
             n = 7
+        elif self.dest == "10M":
+            n = 9
+        elif self.dest == "15M":
+            n = 40
+        elif self.dest == "20m":
+            n = 50
+        else:
+            n = 50
 
         # For 100 K --> 10 MB
         # For 1 M --> 25 MB
@@ -341,8 +382,8 @@ class VecDB:
                 score = self._cal_score(query, vect)
                 q.append((-score, id, vect))
                 # we want to limit the size of the ram usage so we will pop the smallest element from the queue
-                if sys.getsizeof(q) + sys.getsizeof(nearest_centroids) >= ram_size_limit:
-                    q.popleft()
+                # if sys.getsizeof(q) + sys.getsizeof(nearest_centroids) >= ram_size_limit:
+                #     q.popleft()
 
 
             f.close()
@@ -353,8 +394,10 @@ class VecDB:
         # we will pop them from the heap and return them
         ids_scores = []
         for _ in range(top_k):
-            score, id, vect = q.popleft()
+            score, id, vect = q.pop()
             ids_scores.append(id)
+        
+        print("my ids ", ids_scores)
 
         return ids_scores
 

@@ -92,12 +92,12 @@ if __name__ == "__main__":
     #     new_db = False
 
 
-    db = VecDB(new_db=False, file_path="10M")
+    db = VecDB(new_db=False, file_path="5M")
     # now run the queries
-    records_np = rng.random((10*10**6, 70), dtype=np.float32)
+    records_np = rng.random((5*10**6, 70), dtype=np.float32)
     res = run_queries(db, records_np, 5, 1)
 
-    print("restul for 10M records")
+    print("restul for 5M records")
     print(eval(res))
 
 
