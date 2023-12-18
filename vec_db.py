@@ -10,7 +10,7 @@ import os
 #import faiss
 import sys
 import collections
-#from memory_profiler import memory_usage
+from memory_profiler import memory_usage
 
 
 # in this file we will implement a better version of VecDB
@@ -193,10 +193,12 @@ class VecDB:
                 heapq.heappush(heap, (-score, id, vect))
                 #heapq.heappush(all_scores, (score, id))
                 # getsizeof return the size in bytes
-                if sys.getsizeof(heap) + sys.getsizeof(nearest_centroids) >= ram_size_limit:
-                    #print("reduce the heap size --------------------------")
-                    heap = heap[:-len(heap)//2]
+                # if sys.getsizeof(heap) + sys.getsizeof(nearest_centroids) >= ram_size_limit:
+                #     #print("reduce the heap size --------------------------")
+                #     heap = heap[:-len(heap)//2]
             f.close()
+            # save just the top_k from the current centroid
+            heap = heap[:top_k*3]
             
         # now we have the top k vectors in the heap
         # we will pop them from the heap and return them
