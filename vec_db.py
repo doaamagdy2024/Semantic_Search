@@ -198,7 +198,7 @@ class VecDB:
                 #     heap = heap[:-len(heap)//2]
             f.close()
             # save just the top_k from the current centroid
-            heap = heap[:top_k*3]
+            heap = heap[:top_k*2]
             
         # now we have the top k vectors in the heap
         # we will pop them from the heap and return them
