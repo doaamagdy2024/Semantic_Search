@@ -68,6 +68,25 @@ class VecDB:
         # file path to save the db
         self.file_path = file_path
 
+        if file_path == "":
+                    self.n = 15
+        elif file_path == "10K":
+            self.n = 15
+        elif file_path == "100K":
+            self.n = 20
+        elif file_path == "1M":
+            self.n = 20
+        elif file_path == "5M":
+            self.n = 7
+        elif file_path == "10M":
+            self.n = 9
+        elif file_path == "15M":
+            self.n = 40
+        elif file_path == "20m":
+            self.n = 50
+        else:
+            self.n = 50
+
         if new_db:
             # delete files in the folder if exist
             if os.path.exists(self.file_path):
@@ -77,24 +96,7 @@ class VecDB:
             with open(f"{self.file_path}/old_kmeans.pickle", "rb") as fin:
                 self.kmeans = pickle.load(fin)
                 self.centroids = self.kmeans.cluster_centers_
-                if file_path == "":
-                    self.n = 15
-                elif file_path == "10K":
-                    self.n = 15
-                elif file_path == "100K":
-                    self.n = 20
-                elif file_path == "1M":
-                    self.n = 20
-                elif file_path == "5M":
-                    self.n = 7
-                elif file_path == "10M":
-                    self.n = 9
-                elif file_path == "15M":
-                    self.n = 40
-                elif file_path == "20m":
-                    self.n = 50
-                else:
-                    self.n = 50
+                
             # load the centroids from the csv file to self.centroids
             # with open(f"{self.file_path}/old_centroids.csv", "r") as fin:
             #     for line in fin:
