@@ -77,6 +77,24 @@ class VecDB:
             with open(f"{self.file_path}/old_kmeans.pickle", "rb") as fin:
                 self.kmeans = pickle.load(fin)
                 self.centroids = self.kmeans.cluster_centers_
+                if file_path == "":
+                    self.n = 15
+                elif file_path == "10K":
+                    self.n = 15
+                elif file_path == "100K":
+                    self.n = 20
+                elif file_path == "1M":
+                    self.n = 20
+                elif file_path == "5M":
+                    self.n = 7
+                elif file_path == "10M":
+                    self.n = 9
+                elif file_path == "15M":
+                    self.n = 40
+                elif file_path == "20m":
+                    self.n = 50
+                else:
+                    self.n = 50
             # load the centroids from the csv file to self.centroids
             # with open(f"{self.file_path}/old_centroids.csv", "r") as fin:
             #     for line in fin:
@@ -104,26 +122,9 @@ class VecDB:
 
     # TODO: change this function to retreive from the indexed Inverted file index db
     def retrive(self, query: Annotated[List[float], 70], top_k = 5):
-        if self.dest == "":
-            n = 15
-        elif self.dest == "10K":
-            n = 15
-        elif self.dest == "100K":
-            n = 20
-        elif self.dest == "1M":
-            n = 20
-        elif self.dest == "5M":
-            n = 7
-        elif self.dest == "10M":
-            n = 9
-        elif self.dest == "15M":
-            n = 40
-        elif self.dest == "20m":
-            n = 50
-        else:
-            n = 50
 
-        print("n = ", n)
+
+        #print("n = ", n)
                 # For 100 K --> 10 MB
         # For 1 M --> 25 MB
         # For 5 M --> 75 MB
@@ -131,37 +132,37 @@ class VecDB:
         # For 15 M --> 225 MB
         # For 20 M --> 300 MB
 
-        if self.dest == "10K":
-            ram_size_limit = 5 * 1024 * 1024 # 5 MB
-        elif self.dest == "100K":
-            ram_size_limit = 10 * 1024 * 1024
-        elif self.dest == "1M":
-            ram_size_limit = 25 * 1024 * 1024 # 25 MB
-        elif self.dest == "5M":
-            ram_size_limit = 75 * 1024 * 1024 # 75 MB
-        elif self.dest == "10M":
-            ram_size_limit = 150 * 1024 * 1024 # 150 MB
-        elif self.dest == "15M":
-            ram_size_limit = 225 * 1024 * 1024 # 225 MB
-        elif self.dest == "20M":
-            ram_size_limit = 300 * 1024 * 1024 # 300 MB
-        else:
-            ram_size_limit = 5 * 1024 * 1024
+        # if self.dest == "10K":
+        #     ram_size_limit = 5 * 1024 * 1024 # 5 MB
+        # elif self.dest == "100K":
+        #     ram_size_limit = 10 * 1024 * 1024
+        # elif self.dest == "1M":
+        #     ram_size_limit = 25 * 1024 * 1024 # 25 MB
+        # elif self.dest == "5M":
+        #     ram_size_limit = 75 * 1024 * 1024 # 75 MB
+        # elif self.dest == "10M":
+        #     ram_size_limit = 150 * 1024 * 1024 # 150 MB
+        # elif self.dest == "15M":
+        #     ram_size_limit = 225 * 1024 * 1024 # 225 MB
+        # elif self.dest == "20M":
+        #     ram_size_limit = 300 * 1024 * 1024 # 300 MB
+        # else:
+        #     ram_size_limit = 5 * 1024 * 1024
 
-        # convert the ram_size_limit to GB
-        ram_size_limit = ram_size_limit / 1024
+        # # convert the ram_size_limit to GB
+        # ram_size_limit = ram_size_limit / 1024
 
         # print("self.dest", self.dest)
         # print("n", n)
         # as numy float is c double we need to convert it to python float
-        query = list(query)
+        #query = list(query)
         #print("query", query)
         
         #query = np.array(query).reshape(1, -1)
         # nearest_one = self.kmeans.predict(query)[0]
         # print("nearest_one------------------------", nearest_one)
         
-        nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:n]
+        nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:self.n]
         # # now we need to get the label of each centroid
         #print("----------------------------------------")
         nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
@@ -190,7 +191,7 @@ class VecDB:
                 score = self._cal_score(query, vect)
 
                 # add it to the heap
-                heapq.heappush(heap, (-score, id, vect))
+                heapq.heappush(heap, (-score, id))
                 #heapq.heappush(all_scores, (score, id))
                 # getsizeof return the size in bytes
                 # if sys.getsizeof(heap) + sys.getsizeof(nearest_centroids) >= ram_size_limit:
@@ -204,7 +205,7 @@ class VecDB:
         # we will pop them from the heap and return them
         ids_scores = []
         for _ in range(top_k):
-            score, id, vect = heapq.heappop(heap)
+            score, id = heapq.heappop(heap)
             ids_scores.append(id)
         
         
@@ -215,7 +216,7 @@ class VecDB:
         #     f.write(f"{id},{score}\n")
         #     if not all_scores:
         #         break       
-        print("my ids", ids_scores)
+        #print("my ids", ids_scores)
         return ids_scores
 
 
