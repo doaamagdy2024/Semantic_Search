@@ -307,7 +307,7 @@ class VecDB:
 
         # now Kmeans has the centroids
         # now we need to assign each vector to the closest centroid
-        #self.centroids = self.kmeans.cluster_centers_
+        self.centroids = self.kmeans.cluster_centers_
         clusters = {}
 
         # print("self.centroids", self.centroids)
