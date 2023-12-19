@@ -334,12 +334,12 @@ class VecDB:
             pickle.dump(self.kmeans, fout)
 
 
-        # create the hnsw index
-        self.index_hnsw = faiss.IndexHNSWFlat(70, 32)
-        # add the centroids to the index
-        self.index_hnsw.add(np.array(self.centroids).astype('float32'))
+        # # create the hnsw index
+        # self.index_hnsw = faiss.IndexHNSWFlat(70, 32)
+        # # add the centroids to the index
+        # self.index_hnsw.add(np.array(self.centroids).astype('float32'))
 
-        # save the hnsw index in a file
-        faiss.write_index(self.index_hnsw, f"{self.file_path}/hnsw_index.index")
+        # # save the hnsw index in a file
+        # faiss.write_index(self.index_hnsw, f"{self.file_path}/hnsw_index.index")
 
         #print("Done building index")
