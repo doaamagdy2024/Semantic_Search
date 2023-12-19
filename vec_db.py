@@ -88,10 +88,11 @@ class VecDB:
             self.n = 50
 
         if new_db:
+            pass
             # delete files in the folder if exist
-            with open(f"{self.file_path}/old_kmeans.pickle", "rb") as fin:
-                self.kmeans = pickle.load(fin)
-                self.centroids = self.kmeans.cluster_centers_
+            # with open(f"{self.file_path}/old_kmeans.pickle", "rb") as fin:
+            #     self.kmeans = pickle.load(fin)
+            #     self.centroids = self.kmeans.cluster_centers_
             # if os.path.exists(self.file_path):
             #     for file in os.listdir(self.file_path):
             #         os.remove(f"{self.file_path}/{file}")
