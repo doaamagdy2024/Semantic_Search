@@ -187,7 +187,11 @@ class VecDB:
         
         #nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:self.n]
         # get the nearest centriods using hnsw index
-        nearest_centroids = self.index_hnsw.search(query, self.n)[1][0] # [1][0] to get the ids only
+        if self.file_path == "10K":
+            nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:self.n]
+            nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
+        else:
+            nearest_centroids = self.index_hnsw.search(query, self.n)[1][0] # [1][0] to get the ids only
         # # now we need to get the label of each centroid
         #print("----------------------------------------")
         #nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
