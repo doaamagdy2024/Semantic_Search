@@ -187,7 +187,7 @@ class VecDB:
         
         #nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:self.n]
         # get the nearest centriods using hnsw index
-        if self.file_path == "1M":
+        if self.file_path != "1M":
             nearest_centroids = sorted(self.centroids, key=lambda centroid: self._cal_score(query, centroid), reverse=True)[:self.n]
             nearest_centroids = [self.kmeans.predict([centroid])[0] for centroid in nearest_centroids]
         else:
