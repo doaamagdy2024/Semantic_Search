@@ -286,7 +286,7 @@ class VecDB:
         # number of vectors to use to create the centroids
         n_vectors_train = ceil(len(db_vectors) * 0.5)
 
-        num_centroids = 500 #ceil(n_vectors_train / self.num_vectors_per_cluster)
+        num_centroids = 500#500 #ceil(n_vectors_train / self.num_vectors_per_cluster)
 
         #self.num_centroids = num_centroids
 
@@ -299,7 +299,7 @@ class VecDB:
 
         #self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors[0:500000]])
 
-        #self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors])
+        self.kmeans = KMeans(n_clusters=num_centroids, random_state=0).fit([vec.vect for vec in db_vectors])
 
         # now Kmeans has the centroids
         # now we need to assign each vector to the closest centroid
