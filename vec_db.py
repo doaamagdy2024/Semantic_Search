@@ -147,7 +147,7 @@ class VecDB:
     def retrive(self, query: Annotated[List[float], 70], top_k = 5):
 
 
-        print("n = ", self.n)
+        # print("n = ", self.n)
         # For 100 K --> 10 MB
         # For 1 M --> 25 MB
         # For 5 M --> 75 MB
