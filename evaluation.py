@@ -93,14 +93,21 @@ if __name__ == "__main__":
     #     db.insert_records(recrods_dict, first_batch=x == 0, new_db=new_db, src= "0", dest="20M")
     #     #new_db = False
 
-
-    db = VecDB(new_db=False, file_path="20M")
-    # now run the queries
-    records_np = rng.random((20*10**6, 70), dtype=np.float32)
+    db = VecDB(new_db=True, file_path="10K")
+    records_np = rng.random((10000, 70), dtype=np.float32)
+    recrods_dict = [{"id": i, "embed": list(row)} for i, row in enumerate(records_np)]
+    db.insert_records(recrods_dict, first_batch=True, new_db=True, src= "0", dest="10K")
     res = run_queries(db, records_np, 5, 1)
-
-    print("restul for 20M records")
     print(eval(res))
+
+
+    # db = VecDB(new_db=False, file_path="100K")
+    # # now run the queries
+    # records_np = rng.random((100000, 70), dtype=np.float32)
+    # res = run_queries(db, records_np, 5, 1)
+
+    # print("restul for 100K records")
+    # print(eval(res))
 
 
 

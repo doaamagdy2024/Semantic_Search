@@ -69,11 +69,11 @@ class VecDB:
         self.file_path = file_path
 
         if file_path == "":
-            self.n = 15
+            self.n = 10
         elif file_path == "10K":
-            self.n = 15
+            self.n = 10
         elif file_path == "100K":
-            self.n = 20
+            self.n = 9
         elif file_path == "1M":
             self.n = 10
         elif file_path == "5M":
@@ -85,7 +85,7 @@ class VecDB:
         elif file_path == "20M":
             self.n = 7
         else:
-            self.n = 50
+            self.n = 10
 
         if new_db:
             pass
