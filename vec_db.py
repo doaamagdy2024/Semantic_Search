@@ -83,7 +83,7 @@ class VecDB:
         elif file_path == "15M":
             self.n = 10
         elif file_path == "20M":
-            self.n = 7
+            self.n = 9
         else:
             self.n = 10
 
