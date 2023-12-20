@@ -112,7 +112,8 @@ class VecDB:
             # faiss.write_index(self.index_hnsw, f"{self.file_path}/hnsw_index.index")
             #######################################################################
             # load the hnsw index form the file
-            self.index_hnsw = faiss.read_index(f"{self.file_path}/hnsw_index.index")
+            if self.file_path == "1M":
+                self.index_hnsw = faiss.read_index(f"{self.file_path}/hnsw_index.index")
                 
             # load the centroids from the csv file to self.centroids
             # with open(f"{self.file_path}/old_centroids.csv", "r") as fin:
